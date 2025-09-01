@@ -1,0 +1,25 @@
+<!-- app/views/shared/_request_form.html.erb -->
+<div class="bg-white shadow rounded-lg p-6">
+  <h2 class="text-lg font-medium text-gray-900 mb-4">Solicitar Produtos</h2>
+
+  <%= form_with url: requests_path, local: false, data: { turbo_frame: false } do |form| %>
+    <div class="mb-4">
+      <%= form.label :customer_name, "Seu nome", class: "block text-sm font-medium text-gray-700 mb-2" %>
+      <%= form.text_field :customer_name, required: true,
+                         class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                         placeholder: "Digite seu nome" %>
+    </div>
+
+    <div class="mb-4">
+      <%= form.label :location, "Seu endereço", class: "block text-sm font-medium text-gray-700 mb-2" %>
+      <%= form.text_field :location, required: true,
+                         class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                         placeholder: "Ex: Rua das Flores, 123 - Centro" %>
+    </div>
+
+    <div class="flex justify-end">
+      <%= form.submit "Solicitar Produtos",
+                     class: "bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium" %>
+    </div>
+  <% end %>
+</div>

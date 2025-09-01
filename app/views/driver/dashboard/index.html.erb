@@ -1,0 +1,34 @@
+<!-- app/views/driver/dashboard/index.html.erb -->
+<div class="min-h-screen bg-gray-50" data-controller="driver-dashboard">
+  <div class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-6">
+        <h1 class="text-3xl font-bold text-gray-900">🚛 Dashboard do Motorista</h1>
+        <div class="flex items-center space-x-4">
+          <span class="text-sm text-gray-500">Olá, <%= current_user.email_address %></span>
+          <%= link_to "Sair", session_path, method: :delete,
+                      class: "text-red-600 hover:text-red-800 text-sm" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Driver Status Panel -->
+    <div id="driver_status">
+      <%= render 'driver/status_panel', driver_state: @driver_state %>
+    </div>
+
+    <!-- Requests Queue -->
+    <div class="mt-8 bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-medium text-gray-900">Fila de Pedidos</h2>
+        <p class="text-sm text-gray-500">Organizados automaticamente por proximidade</p>
+      </div>
+
+      <div id="requests_list">
+        <%= render 'driver/requests_list', requests: @requests %>
+      </div>
+    </div>
+  </div>
+</div>

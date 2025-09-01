@@ -1,0 +1,24 @@
+<!-- app/views/home/index.html.erb -->
+<div class="min-h-screen bg-gray-50" data-controller="customer-map">
+  <div class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-6">
+        <h1 class="text-3xl font-bold text-gray-900">🚛 Padaria Móvel</h1>
+        <%= link_to "Sou Motorista", driver_root_path,
+                   class: "bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Driver Status -->
+  <div id="driver_status_display">
+    <%= render 'shared/driver_status', driver_state: @driver_state %>
+  </div>
+
+  <!-- Request Form -->
+  <div class="max-w-md mx-auto mt-8 p-6">
+    <div id="request_form">
+      <%= render "shared/request_form" %>
+    </div>
+  </div>
+</div>
