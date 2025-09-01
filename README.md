@@ -1,24 +1,21 @@
-# README
+# Hawker
+A hawker is someone who goes around their local area selling goods from a vehicle.
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+The idea came because there's a local hawker in my area who sells doughnuts by car. Sometimes they don't come near my house, and those are exactly the times I really want a doughnut.
 
-Things you may want to cover:
+This app tells you if there's a driver available in your area, and you can let them know you want something. It shows the driver's location in real time.
 
-* Ruby version
+The functionality is extremely simple: type your name and address, the driver sees it and comes to you. You can't buy directly through the app or see what products are available - it's just for connecting customers with the mobile vendor.
 
-* System dependencies
+## How it works
 
-* Configuration
+**For customers:**
+- See if the driver is online and where they are
+- Request service by sharing your name and location
+- Wait for the driver to come to you
 
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+**For drivers:**
+- Start/stop working status
+- Share your current location
+- See customer requests organized by distance
+- Mark requests as complete when done
