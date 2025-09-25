@@ -1,0 +1,2 @@
+module Driver::DashboardHelper
+end
