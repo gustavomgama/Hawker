@@ -20,6 +20,8 @@ gem "thruster", require: false
 gem "tailwindcss-ruby"
 gem "tailwindcss-rails", "~> 3.3.1"
 gem "image_processing", "~> 1.2"
+gem "u-case"
+gem "concurrent-ruby", require: "concurrent"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
