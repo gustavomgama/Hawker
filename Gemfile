@@ -18,7 +18,7 @@ gem "bootsnap", require: false
 gem "kamal", require: false
 gem "thruster", require: false
 gem "tailwindcss-ruby"
-gem "tailwindcss-rails", "~> 3.3.1"
+gem "tailwindcss-rails", "~> 4.3.0"
 gem "image_processing", "~> 1.2"
 gem "u-case"
 gem "concurrent-ruby", require: "concurrent"
