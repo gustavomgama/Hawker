@@ -1,19 +1,13 @@
 class CustomerChannel < ApplicationCable::Channel
   def subscribed
-    request_id = params[:request_id]
+    stream_from "customer_updates"
 
-    if request_exists?(request_id)
-      stream_from "customer_#{request_id}"
-    else
-      reject
+    if params[:request_id].present?
+      stream_from "customer_#{params[:request_id]}"
     end
   end
 
-  def unsubscribed; end
-
-  private
-
-  def request_exists?(request_id)
-    DeliveryState.instance.get_request(request_id).present?
+  def unsubscribed
+    stop_all_streams
   end
 end

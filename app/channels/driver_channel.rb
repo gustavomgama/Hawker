@@ -1,7 +1,9 @@
 class DriverChannel < ApplicationCable::Channel
   def subscribed
-    stream_from "driver_channel" if current_user
+    current_user ? stream_from("driver_channel") : reject
   end
 
-  def unsubscribed; end
+  def unsubscribed
+    stop_all_streams
+  end
 end
