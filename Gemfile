@@ -35,3 +35,15 @@ end
 group :development do
   gem "web-console"
 end
+
+group :test do
+  gem "rspec-rails", "> 8"
+  gem "factory_bot_rails"
+  gem "faker"
+  gem "shoulda-matchers"
+  gem "database_cleaner-active_record"
+  gem "capybara"
+  gem "selenium-webdriver"
+  gem "action-cable-testing"
+  gem "simplecov", require: false
+end
