@@ -23,6 +23,7 @@ gem "image_processing", "~> 1.2"
 gem "u-case"
 gem "concurrent-ruby", require: "concurrent"
 gem "listen"
+gem "redis"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -30,6 +31,7 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
   gem "rubocop-performance", require: false
   gem "rubocop-rails", require: false
+  gem "dotenv"
 end
 
 group :development do
@@ -45,5 +47,7 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
   gem "action-cable-testing"
+  gem "rails-controller-testing"
   gem "simplecov", require: false
+  gem "flatware-rspec"
 end

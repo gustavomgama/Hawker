@@ -3,10 +3,10 @@ class Driver::DashboardController < Driver::BaseController
     result = GetDriverDashboard.call
 
     if result.success?
-      dashboard_data = result.value[:result]
-      @working = dashboard_data[:working]
-      @pending_requests = dashboard_data[:pending_requests]
-      @accepted_requests = dashboard_data[:accepted_requests]
+      dashboard_data = result.value || {}
+      @working = dashboard_data[:working] || false
+      @pending_requests = dashboard_data[:pending_requests] || []
+      @accepted_requests = dashboard_data[:accepted_requests] || []
       @driver_location = dashboard_data[:location]
     else
       @working = false
@@ -24,9 +24,9 @@ class Driver::DashboardController < Driver::BaseController
     )
 
     if result.success?
-      render json: { success: true }.merge(result.value[:result])
+      render json: { success: true }.merge(result.value || {})
     else
-      render json: { success: false }.merge(result.value[:result]), status: :bad_request
+      render json: { success: false }.merge(result.value || {}), status: :bad_request
     end
   end
 
@@ -37,9 +37,9 @@ class Driver::DashboardController < Driver::BaseController
     )
 
     if result.success?
-      render json: { success: true }.merge(result.value[:result])
+      render json: { success: true }.merge(result.value || {})
     else
-      render json: { success: false }.merge(result.value[:result]), status: :bad_request
+      render json: { success: false }.merge(result.value || {}), status: :bad_request
     end
   end
 
@@ -50,9 +50,9 @@ class Driver::DashboardController < Driver::BaseController
     )
 
     if result.success?
-      render json: { success: true }.merge(result.value[:result])
+      render json: { success: true }.merge(result.value || {})
     else
-      render json: { success: false }.merge(result.value[:result]), status: :bad_request
+      render json: { success: false }.merge(result.value || {}), status: :bad_request
     end
   end
 end

@@ -7,9 +7,8 @@ class BaseCase < Micro::Case
     @delivery_state ||= DeliveryState.instance
   end
 
-  # TODO: Distance/routing calculations will be handled by the map library
+  # TODO: geocode
 
-  # LEGACY: ??
   def broadcast_to_driver(data)
     ActionCable.server.broadcast("driver_channel", data)
   end

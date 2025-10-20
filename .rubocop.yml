@@ -6,6 +6,9 @@ inherit_mode:
   merge:
     - Exclude
 
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
 AllCops:
   SuggestExtensions: false
   Exclude:

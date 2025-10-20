@@ -10,9 +10,9 @@ class HomeController < ApplicationController
     )
 
     if result.success?
-      render json: { success: true }.merge(result.value[:result])
+      render json: { success: true }.merge(result.value || {})
     else
-      render json: { success: false }.merge(result.value[:result]), status: :unprocessable_entity
+      render json: { success: false }.merge(result.value || {}), status: :unprocessable_content
     end
   end
 end

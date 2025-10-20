@@ -15,7 +15,6 @@ class DeliveryState
   end
 
   def get_request(id)
-    # debugger
     @requests[id]
   end
 

@@ -9,7 +9,7 @@ class CreateDeliveryRequest < BaseCase
     unless driver_available?
       return Failure(result: { error: "No driver available" })
     end
-    # debugger
+
     request_data = build_request_data
 
     delivery_state.add_request(request_data[:id], request_data)
@@ -20,7 +20,7 @@ class CreateDeliveryRequest < BaseCase
     })
 
     Success(result: {
-      message: "Sent! Waiting for driver confirmation.",
+      message: "Request sent!",
       request: request_data
     })
   end
