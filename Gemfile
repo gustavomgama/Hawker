@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.0.2", ">= 8.0.2.1"
+gem "rails", "~> 8.1.4", ">= 8.1.4.1"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
@@ -42,6 +42,9 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
+# Guard migrations against locks and downtime [https://github.com/ankane/strong_migrations]
+gem "strong_migrations"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -51,9 +54,21 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Audit gem versions against the ruby-advisory-db [https://github.com/rubysec/bundler-audit]
+  gem "bundler-audit", require: false
+
+  # Find missing and unused translations [https://github.com/glebm/i18n-tasks]
+  gem "i18n-tasks", require: false
+
+  # Static quality report: churn, complexity, duplication, smells [https://github.com/whitesmith/rubycritic]
+  gem "rubycritic", require: false
 end
 
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # Detect N+1 queries in development [https://github.com/charkost/prosopite]
+  gem "prosopite"
 end
