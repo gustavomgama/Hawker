@@ -1,0 +1,4 @@
+base_locale: en
+
+ignore_unused:
+  - "time.formats.*"

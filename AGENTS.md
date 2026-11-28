@@ -59,24 +59,30 @@ Run in this order; cheapest first. Each is expected to pass with the stated outp
 | Command | Proves | Expected |
 | --- | --- | --- |
 | `ruby bin/ci` | every check below in one run | all steps pass, exit `0` |
+| `bundle check` | `Gemfile.lock` satisfies every Gemfile constraint; no drift or unresolved gems | `The Gemfile's dependencies are satisfied` |
 | `ruby bin/rails zeitwerk:check` | autoloading/eager-load integrity, catches misplaced or misnamed files | `All is good!` |
+| `ruby bin/rails db:test:prepare`, `ruby bin/rails db:migrate`, then `git diff --exit-code -- db/schema.rb` | `db/schema.rb` is what `db/migrate` produces; a migration without its schema update fails here | empty diff, exit `0` |
 | `ruby bin/rubocop` | omakase style | `43 files inspected, no offenses detected` (count grows) |
 | `ruby bin/rails test` | domain rules and state transitions | `55 runs, 202 assertions, 0 failures` (counts grow) |
 | `ruby bin/brakeman --no-pager` | security static analysis | `No warnings found`, exit `0` |
 | `ruby bin/bundler-audit check --update` | CVEs against `Gemfile.lock` via ruby-advisory-db | `No vulnerabilities found` |
 | `ruby bin/importmap audit` | vulnerable pinned JS packages | `No vulnerable packages found` |
 | `ruby bin/i18n-tasks missing` | keys used in code but absent from `config/locales` | `No translations are missing.` |
+| `ruby bin/i18n-tasks unused` | keys in `config/locales` nothing reads | `Every translation is in use.` |
 | `ruby bin/rubycritic --no-browser app lib config` | churn, complexity, duplication and smell report | writes `tmp/rubycritic/overview.html` |
 | `ruby bin/rails routes` | route table still parses (run when routes change) | table prints |
 | `ruby bin/rails db:migrate` | migration applies cleanly (run when `db/` changes) | `== … migrated` |
 
 Notes:
 
-- `ruby bin/ci` (`config/ci.rb`) runs every check below and reports at the end; it needs no database. GitHub Actions runs the same command, so local and CI cannot drift.
+- `ruby bin/ci` (`config/ci.rb`) runs every check below and reports at the end. It forces `RAILS_ENV=test`, needs the `hawker_test` database and a git checkout (the schema step is a `git diff`), runs all steps even after one fails, and exits non-zero if any failed. GitHub Actions runs the same command, so local and CI cannot drift.
+- The schema steps are ordered on purpose: `db:test:prepare` loads `db/schema.rb`, `db:migrate` applies anything pending and dumps the schema back, `git diff` then proves the committed file is the one the migrations produce. Never reorder them.
+- `config/i18n-tasks.yml` exists only to ignore `time.formats.*`: `l(record, format: :time)` is resolved at runtime, so the static scanner cannot see it. A new dynamically built key needs the same narrow ignore, not a deleted check.
 - RubyCritic is a report, not a verdict: it always exits `0` unless it crashes. Read `tmp/rubycritic/overview.html`, never gate a merge on its score.
 
 - `brakeman` prints `Process.fork is not supported by this Ruby` on Windows. It falls back to a serial scan. Harmless; exit code is still `0`.
 - CI runs the same command on Linux using `.ruby-version`. If CI fails and local does not, suspect a platform assumption (paths, `fork`, case sensitivity, `.exe` binstubs), not the code.
+- `.github/workflows/ci.yml` adds only setup and assertions around that one command: `permissions: contents: read`, `BUNDLE_FROZEN=true` (a `Gemfile` edit without its lockfile fails before any step runs), `concurrency` with `cancel-in-progress`, a 20-minute job timeout, checkout without persisted credentials, and a final `git diff --exit-code` proving no check modified a tracked file. Add no check there; add it to `config/ci.rb`.
 - If a check cannot run (no database, wrong interpreter), say so explicitly. Never silently skip.
 
 ---
