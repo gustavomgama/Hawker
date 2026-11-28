@@ -1,6 +1,9 @@
 require "test_helper"
+require "turbo/broadcastable/test_helper"
 
 class HawkerProfileTest < ActiveSupport::TestCase
+  include Turbo::Broadcastable::TestHelper
+
   test "starts offline and not broadcasting" do
     assert_not profile.working?
     assert_not profile.broadcasting?
@@ -55,5 +58,27 @@ class HawkerProfileTest < ActiveSupport::TestCase
     assert_not profile.broadcasting?
     assert profile.working?
     assert_equal "accepted", stop.reload.status
+  end
+
+  test "going online broadcasts the customer stall" do
+    stream = capture_turbo_stream_broadcasts("hawker_profile") { profile.go_online! }
+
+    assert_equal 1, stream.size
+    assert_equal "replace", stream.first["action"]
+    assert_equal "stall", stream.first["target"]
+  end
+
+  test "going offline broadcasts the customer stall" do
+    profile.go_online!
+
+    assert_turbo_stream_broadcasts "hawker_profile" do
+      profile.go_offline!
+    end
+  end
+
+  test "pausing does not broadcast the stall" do
+    profile.go_online!
+
+    assert_empty capture_turbo_stream_broadcasts("hawker_profile") { profile.pause! }
   end
 end

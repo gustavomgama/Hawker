@@ -1,0 +1,22 @@
+<main id="stall" class="stall" data-state="<%= profile.working? ? "working" : "not-working" %>">
+  <p class="lamp" aria-hidden="true"></p>
+  <h1 class="state"><%= profile.working? ? "Your hawker is working" : "Your hawker is not working" %></h1>
+
+  <% if profile.working? %>
+    <%= form_with url: stops_path, scope: :stop, class: "ask" do |form| %>
+      <label>
+        Your name
+        <%= form.text_field :customer_name, required: true, autocomplete: "name" %>
+      </label>
+      <label>
+        Where to find you
+        <%= form.text_field :address, required: true, autocomplete: "street-address" %>
+      </label>
+      <label>
+        What you want
+        <%= form.text_area :items, rows: 2 %>
+      </label>
+      <%= form.submit "Ask for a stop", class: "button" %>
+    <% end %>
+  <% end %>
+</main>

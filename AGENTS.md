@@ -61,7 +61,7 @@ Run in this order; cheapest first. Each is expected to pass with the stated outp
 | `ruby bin/ci` | every check below in one run | all steps pass, exit `0` |
 | `ruby bin/rails zeitwerk:check` | autoloading/eager-load integrity, catches misplaced or misnamed files | `All is good!` |
 | `ruby bin/rubocop` | omakase style | `37 files inspected, no offenses detected` (count grows) |
-| `ruby bin/rails test` | domain rules and state transitions | `37 runs, 150 assertions, 0 failures` (counts grow) |
+| `ruby bin/rails test` | domain rules and state transitions | `41 runs, 162 assertions, 0 failures` (counts grow) |
 | `ruby bin/brakeman --no-pager` | security static analysis | `No warnings found`, exit `0` |
 | `ruby bin/bundler-audit check --update` | CVEs against `Gemfile.lock` via ruby-advisory-db | `No vulnerabilities found` |
 | `ruby bin/importmap audit` | vulnerable pinned JS packages | `No vulnerable packages found` |
@@ -164,6 +164,7 @@ with a process manager instead of bolting onto the current script.
 
 - ERB only. Turbo Drive is automatic on links and forms; Turbo Frames scope partial navigation; Turbo Streams update after mutations; Stimulus adds isolated behaviour. No React/Vue/jQuery, no client-side router.
 - **Hotwire is wired.** `config/importmap.rb` pins Turbo, Stimulus and `app/javascript/controllers`; `app/javascript/application.js` imports them; the layout renders `javascript_importmap_tags`. Add a package with `ruby bin/importmap pin <name>`, add a Stimulus controller under `app/javascript/controllers/`, and `bin/importmap audit` runs in the gate.
+- The customer screen subscribes with `turbo_stream_from "hawker_profile"`; `HawkerProfile` broadcasts a replace of `home/_stall` (target `stall`) after any change to `availability`, so going online or offline flips the page without a reload. Pausing changes `broadcasting`, not `availability`, and deliberately does not rebroadcast. This works on the development `async` cable adapter; production cable is still `redis` without the gem, so streams stay dev-only until the Solid stack is wired (§10).
 - Styles: the single stylesheet is `app/assets/stylesheets/application.css`, linked with `stylesheet_link_tag :app`. **`:app` is correct** in Rails 8.1 — verified to resolve to `application.css` with a digest. Do not "fix" it to `"application"`.
 - No CSS build step. `cssbundling-rails` is in the `Gemfile` but there is no `package.json`, so it does nothing; do not assume Tailwind/Sass is available.
 - No inline `<script>` or `<style>`. The CSP initializer is fully commented out, so nothing is protecting inline content today — enable `content_security_policy` before adding third-party scripts.

@@ -14,13 +14,14 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 - [x] Stop lifecycle from the hawker screen: arrive, fulfil, test
 - [ ] Hawker login with `has_secure_password` and a session, protecting every hawker action, tests
 - [ ] Customer identity by phone, tying a request to the signed-in customer, tests
-- [ ] Live availability: publish the profile state so the customer screen flips without a reload, test
+- [x] Live availability: publish the profile state so the customer screen flips without a reload, test
 - [ ] `positions` table and an endpoint for the hawker app to post a position, pruned by a job, test
 - [ ] Customer sees the hawker's last known position and when it was recorded, test
 
 ## Blocked
 
 * What guards the hawker screen until real login exists: HTTP basic from credentials, a single shared token, or leave it open? Every stopgap is either a new auth scheme or bypassable behind Thruster, so this is the user's call.
+* Hawker login (item 15) and customer phone identity (item 16) are both auth changes, which `AGENTS.md` §19 and the loop's stop rule put in the user's hands. Two answers are needed: uncomment `bcrypt` and add a `password_digest` migration plus sessions, and how the first hawker password gets provisioned (seed from an env var, Rails credentials, or a console-only task). No scheme is invented here.
 
 ## Needs a decision from the user
 
