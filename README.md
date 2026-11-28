@@ -25,13 +25,47 @@ ruby bin/rails db:seed
 ruby bin/dev
 ```
 
-In development and test `db:seed` also creates 8 customers with a stop in every
-status and 3 recent positions; production seeds only the profile, and stays
-offline. Re-seeding never overwrites a stop you already moved, so use
-`ruby bin/rails db:reset` for a fresh dataset.
-
 On Windows always call Rails as `ruby bin/rails …`; `bin/rails` has no `.exe` and
 PowerShell will not run it directly.
+
+## Seed data
+
+`db:seed` runs automatically when `db:prepare` creates an empty database. Outside
+production it leaves you with a working hawker and enough data for every screen
+and control to have something behind it:
+
+| Seeded | What it is for |
+| --- | --- |
+| the hawker, `online` and `broadcasting` | `/` says working and shows a fresh `Last seen at` |
+| 8 customers, one stop each | 2 `requested`, 1 `accepted` (route position 1), 1 `arrived` (position 2), 1 `fulfilled`, 1 `declined`, 1 `dropped`, 1 `voided` |
+| 3 positions, 9, 5 and 1 minutes old | the `Last seen at` readout, and pruning when the hawker stops |
+
+So `/` renders the form and `/hawker` renders `2 waiting · 2 on the route`.
+
+Production seeds only the profile record and stays offline.
+
+## Try it
+
+Start `ruby bin/dev` with `HAWKER_USERNAME` and `HAWKER_PASSWORD` exported, then:
+
+1. Open `/`. The hawker is working, `Last seen at` is recent, and the request form
+   is there. Ask for a stop with any name and address.
+2. Open `/hawker` with basic auth. The request is listed under the counts with
+   **Accept** and **Decline**.
+3. Accept it — the stop moves onto the route with the next position number. Arrive
+   it, then Fulfil it — it leaves the route.
+4. Decline a request — it leaves the list.
+5. Pause — `/` still says working and keeps `Last seen at`, and `POST /positions`
+   answers `409` while storing nothing. Resume and a ping answers `204`.
+6. Stop working with a stop on the route — requested stops become `voided`, route
+   stops `dropped`, positions are pruned, `Last seen at` disappears, and any open
+   customer tab flips to not working without a reload. The form is gone, and a
+   request posted anyway is refused with nothing written.
+7. `/up` returns `200`; `/hawker` without credentials returns `401`.
+
+Seeding never overwrites a stop you have already moved, and re-seeding an existing
+database adds nothing. Use `ruby bin/rails db:reset` for a pristine dataset — it
+drops the database, so keep it away from anything you want to keep.
 
 ## Credentials
 
