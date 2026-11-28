@@ -2,6 +2,7 @@ class HawkersController < ApplicationController
   def show
     @profile = HawkerProfile.instance
     @requests = Stop.requested.order(:created_at)
+    @route = Stop.on_route
   end
 
   def update

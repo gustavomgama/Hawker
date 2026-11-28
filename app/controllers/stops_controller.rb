@@ -23,7 +23,13 @@ class StopsController < ApplicationController
     end
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.remove(stop) }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "workspace",
+          partial: "hawkers/workspace",
+          locals: { requests: Stop.requested.order(:created_at), route: Stop.on_route }
+        )
+      end
       format.html { redirect_to hawker_path }
     end
   rescue Stop::InvalidTransition

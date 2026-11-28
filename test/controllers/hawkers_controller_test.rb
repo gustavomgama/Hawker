@@ -75,6 +75,31 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
     assert_select "ul.requests", count: 0
   end
 
+  test "the screen lists the route in sequence order with the counts" do
+    profile.go_online!
+    early = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+    late = Stop.request!(customer_name: "Bo", address: "Rua B 20")
+    late.accept!
+    early.accept!
+    Stop.request!(customer_name: "Caio", address: "Rua C 30")
+
+    get hawker_path
+
+    assert_select "#workspace p.counts", "1 waiting · 2 on the route"
+    assert_select "#workspace ol.route li", count: 2
+    assert_select "#workspace ol.route li:nth-child(1)", /Rua B 20/
+    assert_select "#workspace ol.route li:nth-child(2)", /Rua A 10/
+  end
+
+  test "everything starts empty on the route" do
+    profile.go_online!
+
+    get hawker_path
+
+    assert_select "#workspace p.counts", "0 waiting · 0 on the route"
+    assert_select "#workspace ol.route", count: 0
+  end
+
   test "an unknown state changes nothing" do
     profile.go_online!
 

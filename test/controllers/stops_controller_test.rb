@@ -46,7 +46,9 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "accepted", stop.reload.status
     assert_equal 1, stop.sequence
-    assert_select "turbo-stream[action=?][target=?]", "remove", "stop_#{stop.id}"
+    assert_includes response.body, 'action="replace"'
+    assert_includes response.body, 'target="workspace"'
+    assert_includes response.body, "0 waiting · 1 on the route"
   end
 
   test "declining a request takes it out of the queue without a reload" do
@@ -58,7 +60,8 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "declined", stop.reload.status
     assert_equal 0, Stop.requested.count
-    assert_select "turbo-stream[action=?][target=?]", "remove", "stop_#{stop.id}"
+    assert_includes response.body, "0 waiting · 0 on the route"
+    assert_not_includes response.body, "Rua A 10"
   end
 
   test "a second answer is refused and leaves the stop where it is" do

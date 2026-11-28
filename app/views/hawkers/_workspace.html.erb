@@ -1,0 +1,33 @@
+<p class="counts" aria-live="polite"><%= requests.size %> waiting · <%= route.size %> on the route</p>
+
+<% if requests.any? %>
+  <ul class="requests">
+    <% requests.each do |stop| %>
+      <li id="<%= dom_id(stop) %>" class="request">
+        <p class="request-address"><%= stop.address %></p>
+        <p class="request-detail"><%= [ stop.customer.name, stop.items ].compact_blank.join(" · ") %></p>
+        <div class="request-actions">
+          <%= form_with url: stop_path(stop), method: :patch, class: "control" do |form| %>
+            <%= form.hidden_field :state, value: "accepted" %>
+            <%= form.submit "Accept", class: "button" %>
+          <% end %>
+          <%= form_with url: stop_path(stop), method: :patch, class: "control" do |form| %>
+            <%= form.hidden_field :state, value: "declined" %>
+            <%= form.submit "Decline", class: "button button--quiet" %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if route.any? %>
+  <ol class="route">
+    <% route.each do |stop| %>
+      <li id="<%= dom_id(stop, :route) %>" class="route-stop">
+        <span class="route-position"><%= stop.sequence %></span>
+        <span class="route-address"><%= stop.address %></span>
+      </li>
+    <% end %>
+  </ol>
+<% end %>
