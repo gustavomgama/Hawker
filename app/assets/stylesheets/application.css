@@ -56,3 +56,70 @@ body {
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
+
+.notice {
+  position: fixed;
+  inset: 0 0 auto;
+  margin: 0;
+  padding: 1rem clamp(1.5rem, 6vw, 4.5rem);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9rem;
+  color: var(--lamp);
+}
+
+.ask {
+  display: grid;
+  gap: 1.1rem;
+  max-width: 32rem;
+  margin-top: 1rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.ask label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: rgb(239 231 214 / 78%);
+}
+
+.ask :is(input, textarea) {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0.6rem 0;
+  border: 0;
+  border-bottom: 1px solid rgb(239 231 214 / 28%);
+  border-radius: 0;
+  background: transparent;
+  color: var(--bone);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.ask textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.ask :is(input, textarea):focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 3px;
+  border-bottom-color: transparent;
+}
+
+.ask input[type="submit"] {
+  min-height: 44px;
+  margin-top: 0.4rem;
+  padding: 0.8rem 1.4rem;
+  border: 0;
+  border-radius: 2px;
+  background: var(--lamp);
+  color: var(--stall);
+  font-size: 1rem;
+  font-weight: 600;
+  justify-self: start;
+  cursor: pointer;
+}
+
+.ask input[type="submit"]:hover {
+  background: #f7c654;
+}

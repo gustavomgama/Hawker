@@ -5,7 +5,7 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 ## Backlog
 
 - [x] Root route and customer screen: reads the singleton `HawkerProfile`, renders "Your hawker is working" or "not working", with tests for both states
-- [ ] Customer request form: posts an address and items, creates the stop through `Stop.request!`, redirects, test
+- [x] Customer request form: posts an address and items, creates the stop through `Stop.request!`, redirects, test
 - [ ] Refused request while offline: honest message, no record written, test
 - [ ] Hawker screen with a simple guard: toggle online/offline and pause/resume, tests
 - [ ] Hawker sees requested stops and can accept or decline, updating without a reload
