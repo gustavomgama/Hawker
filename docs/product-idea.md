@@ -51,6 +51,8 @@ merchant**, not speed and not supply.
 | 8 | **Availability is visible, not announced.** Customers see that the hawker is working when they look. There is **no push notification to customers** when the hawker goes online. | Customer-facing push does not exist as a feature. The hawker alone receives push, for requests. |
 | 9 | **Offline means no interaction at all.** No new requests, no messages, no calls, nothing to accept. | Being offline is a hard gate, enforced by the server, not a UI hint. |
 | 10 | **Going offline drops accepted stops, without warning the hawker first.** The customer is shown **"The hawker stopped working"**. | No confirmation dialog, no "you have 2 stops" warning. The toggle is one press. The customer's state is honest instead of silent. |
+| 11 | **A paused hawker is shown as text, never a map.** The customer reads "Last seen at 14:03"; there is no pin, no greyed map. | One line of text instead of a mapping stack, and a stale position can never look live. The time is the honesty mechanism. |
+| 12 | **HTTP basic is the hawker's login, and customers have no identity.** | No password table, no session, no SMS. The one operator is authenticated by a shared credential; the name and address on a request are the customer's whole identity. |
 
 ---
 
@@ -202,12 +204,10 @@ Shrinking as decisions land.
 3. What is being ordered — **free text** ("2 empanadas") or a **catalogue with items
    and prices**?
 4. **Payment**: cash on arrival, in-app, or both?
-5. **What does the customer see when the hawker is paused?** Frozen last position, a
-   greyed map, or text only?
-6. What **area** does the hawker serve, and with no street names in informal areas,
+5. What **area** does the hawker serve, and with no street names in informal areas,
    is dropping a pin the primary address input?
-7. **Capacity**: maximum stops held at once? What happens at the limit?
-8. Does the hawker see **stop numbers only**, or also internal timing per stop?
+6. **Capacity**: maximum stops held at once? What happens at the limit?
+7. Does the hawker see **stop numbers only**, or also internal timing per stop?
 
 ---
 
@@ -255,7 +255,9 @@ Rails application with the first product slice in it:
 - Rails 8.1.4.1 on Ruby 4.0.10, PostgreSQL, Propshaft, Hotwire, Puma — a usable base.
 - `HawkerProfile`, `Stop`, `Customer` and `Position` exist; the availability and stop
   state machines, the customer screen and the hawker workspace are tested.
-- HTTP basic guards the hawker surface; customers still have no identity.
+- The customer screen shows "Last seen at 14:03" from the newest position whenever the
+  hawker is working, paused included; nothing is shown while offline.
+- HTTP basic is the hawker's login; customers still have no identity.
 - Position pings are append-only and are pruned when the hawker goes offline.
 - `solid_queue` and `solid_cable` are wired for production on their own databases;
   `solid_cache` is installed and still unwired.

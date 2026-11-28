@@ -30,10 +30,14 @@ class HawkerProfile < ApplicationRecord
     update!(broadcasting: true) if working?
   end
 
+  def last_position
+    Position.order(created_at: :desc).first
+  end
+
   private
 
   def broadcast_stall
-    broadcast_replace_to "hawker_profile", target: "stall", partial: "home/stall", locals: { profile: self }
+    broadcast_replace_to "hawker_profile", target: "stall", partial: "home/stall", locals: { profile: self, last_position: last_position }
   end
 
   def prune_positions

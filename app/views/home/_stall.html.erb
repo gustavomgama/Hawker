@@ -2,6 +2,10 @@
   <p class="lamp" aria-hidden="true"></p>
   <h1 class="state"><%= profile.working? ? "Your hawker is working" : "Your hawker is not working" %></h1>
 
+  <% if profile.working? && last_position %>
+    <p class="last-seen">Last seen at <%= l last_position.created_at, format: :time %></p>
+  <% end %>
+
   <% if profile.working? %>
     <%= form_with url: stops_path, scope: :stop, class: "ask" do |form| %>
       <label>

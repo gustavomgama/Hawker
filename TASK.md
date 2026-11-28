@@ -12,18 +12,16 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 - [x] Hawker sees requested stops and can accept or decline, updating without a reload
 - [x] Hawker route list: accepted stops in `sequence` order plus the requested-versus-accepted stop count, test
 - [x] Stop lifecycle from the hawker screen: arrive, fulfil, test
-- [ ] Hawker login with `has_secure_password` and a session, protecting every hawker action, tests
-- [ ] Customer identity by phone, tying a request to the signed-in customer, tests
 - [x] Live availability: publish the profile state so the customer screen flips without a reload, test
 - [x] `positions` table and an endpoint for the hawker app to post a position, pruned by a job, test
-- [ ] Customer sees the hawker's last known position and when it was recorded, test
+- [x] Customer sees the hawker's last known position and when it was recorded, test
 
 ## Blocked
 
-* Decided (user): HTTP basic from `HAWKER_USERNAME`/`HAWKER_PASSWORD` guards the hawker surface for now. Recorded in `AGENTS.md` §8/§12. Item 15 (real login) is therefore still open on the question of whether and when `has_secure_password` plus a session replaces basic auth; no `bcrypt` or `password_digest` work starts before that answer.
-* Hawker login (item 15) and customer phone identity (item 16) are both auth changes, which `AGENTS.md` §19 and the loop's stop rule put in the user's hands. Basic auth covers the hawker surface meanwhile; item 16 needs a decision on how a phone identifies a customer (verified by SMS, unverified, or a signed link).
+* Decided (user): HTTP basic from `HAWKER_USERNAME`/`HAWKER_PASSWORD` **stays**. A password login with `has_secure_password` and a session does not replace it, so that item is dropped from the backlog. Recorded in `AGENTS.md` §12.
+* Decided (user): **no customer identity by phone**. The name and address a customer types on the request are enough, so the phone-identity item is dropped. Recorded in `AGENTS.md` §12.
 * Decided (user): positions are kept **until the hawker goes offline** — `PrunePositionsJob` deletes every row when `availability` leaves `online`, and a ping sent while not broadcasting is refused with `409` and writes nothing. `solid_queue` and `solid_cable` are wired for production (`AGENTS.md` §10); `solid_cache` stays unwired until something needs it.
-* Item 19 depends on item 18 (done) and on the unanswered paused-state question below (frozen position, greyed map, or text only), so it cannot be built without that.
+* Decided (user): while paused the customer sees the last recorded position **as text** — "Last seen at 14:03" — never a map or a pin. `/` and the availability broadcast both render it from `HawkerProfile#last_position`, gated on `working?`, so nothing lingers once the hawker is offline and the positions are pruned.
 
 ## Needs a decision from the user
 
@@ -33,7 +31,6 @@ Not checkboxes on purpose: an unanswered question must never block the loop from
 * Is the customer waiting at the address, or is this a delivery to a door?
 * Is an order free text, or a catalogue with items and prices?
 * How is payment taken: cash on arrival, in-app, or both?
-* What does the customer see when the hawker is paused — frozen position, greyed map, or text only?
 * What area does the hawker serve, and is dropping a pin the primary address input where streets have no names?
 * Is there a maximum number of stops, and what happens at the limit?
 * Does the hawker see any internal timing per stop?
