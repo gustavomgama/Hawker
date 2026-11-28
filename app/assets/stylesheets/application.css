@@ -192,3 +192,37 @@ body {
   display: flex;
   justify-content: flex-start;
 }
+
+.requests {
+  width: 100%;
+  max-width: 34rem;
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.request {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgb(239 231 214 / 16%);
+}
+
+.request-address {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.request-detail {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgb(239 231 214 / 62%);
+}
+
+.request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

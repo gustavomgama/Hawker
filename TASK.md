@@ -9,7 +9,7 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 - [x] Refused request while offline: honest message, no record written, test
 - [x] Hawker screen: toggle online/offline and pause/resume, tests
 - [ ] Guard the hawker screen: it is reachable by anyone until login exists
-- [ ] Hawker sees requested stops and can accept or decline, updating without a reload
+- [x] Hawker sees requested stops and can accept or decline, updating without a reload
 - [ ] Hawker route list: accepted stops in `sequence` order plus the requested-versus-accepted stop count, test
 - [ ] Stop lifecycle from the hawker screen: arrive, fulfil, test
 - [ ] Hawker login with `has_secure_password` and a session, protecting every hawker action, tests

@@ -61,7 +61,7 @@ Run in this order; cheapest first. Each is expected to pass with the stated outp
 | `ruby bin/ci` | every check below in one run | all steps pass, exit `0` |
 | `ruby bin/rails zeitwerk:check` | autoloading/eager-load integrity, catches misplaced or misnamed files | `All is good!` |
 | `ruby bin/rubocop` | omakase style | `37 files inspected, no offenses detected` (count grows) |
-| `ruby bin/rails test` | domain rules and state transitions | `24 runs, 79 assertions, 0 failures` (counts grow) |
+| `ruby bin/rails test` | domain rules and state transitions | `31 runs, 109 assertions, 0 failures` (counts grow) |
 | `ruby bin/brakeman --no-pager` | security static analysis | `No warnings found`, exit `0` |
 | `ruby bin/bundler-audit check --update` | CVEs against `Gemfile.lock` via ruby-advisory-db | `No vulnerabilities found` |
 | `ruby bin/importmap audit` | vulnerable pinned JS packages | `No vulnerable packages found` |
@@ -155,6 +155,7 @@ with a process manager instead of bolting onto the current script.
 - Status codes: `200` read, `201` created, `204` no content, `302` redirect after form, `422` validation failure, `404` missing or unauthorized resource.
 - Keep `get "up" => "rails/health#show"` as `:rails_health_check`. Deploy health checks depend on it.
 - `root "home#index"` is the customer screen: `HomeController` reads `HawkerProfile.instance` and renders the working/not-working state, plus the request form only while working. `resources :stops, only: :create` turns a submitted request into a `Stop` and redirects home with a `notice`; a submission that arrives after the hawker stopped is refused with an `alert` and writes nothing. The layout renders both flashes.
+- `resources :stops, only: %i[create update]` also carries the hawker's answer: `update` takes one `state` param (`accepted`, `declined`), calls `accept!`/`decline!`, answers `400` for anything else and `409` when `Stop::InvalidTransition` says the row already moved. With Turbo it renders `turbo_stream.remove` for `dom_id(stop)`; without it, a redirect to `hawker_path`. The hawker screen lists `Stop.requested` in creation order, and each row's id must stay `dom_id(stop)` so the stream target matches.
 - `resource :hawker, only: %i[show update]` is the hawker's own screen: `show` renders both states, `update` takes one `state` param (`working`, `stopped`, `paused`, `broadcasting`) and calls the matching `HawkerProfile` intent method, answering `400` for anything else. The route is inferred as `HawkersController` because singular resources still pluralise the controller. Nothing guards this screen yet; `TASK.md` carries the open question.
 
 ---

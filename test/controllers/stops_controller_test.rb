@@ -36,4 +36,59 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select "p.alert", "Your hawker is not working, so nothing was sent."
   end
+
+  test "accepting a request puts it on the route and removes its row without a reload" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+
+    patch stop_path(stop), params: { state: "accepted" }, as: :turbo_stream
+
+    assert_response :success
+    assert_equal "accepted", stop.reload.status
+    assert_equal 1, stop.sequence
+    assert_select "turbo-stream[action=?][target=?]", "remove", "stop_#{stop.id}"
+  end
+
+  test "declining a request takes it out of the queue without a reload" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+
+    patch stop_path(stop), params: { state: "declined" }, as: :turbo_stream
+
+    assert_response :success
+    assert_equal "declined", stop.reload.status
+    assert_equal 0, Stop.requested.count
+    assert_select "turbo-stream[action=?][target=?]", "remove", "stop_#{stop.id}"
+  end
+
+  test "a second answer is refused and leaves the stop where it is" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+    stop.accept!
+
+    patch stop_path(stop), params: { state: "declined" }, as: :turbo_stream
+
+    assert_response :conflict
+    assert_equal "accepted", stop.reload.status
+  end
+
+  test "a stop answered without streams falls back to the hawker screen" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+
+    patch stop_path(stop), params: { state: "accepted" }
+
+    assert_redirected_to hawker_path
+    assert_equal "accepted", stop.reload.status
+  end
+
+  test "an unknown answer changes nothing" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+
+    patch stop_path(stop), params: { state: "cooked" }
+
+    assert_response :bad_request
+    assert_equal "requested", stop.reload.status
+  end
 end

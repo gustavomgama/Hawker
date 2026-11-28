@@ -52,6 +52,29 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
     assert profile.broadcasting?
   end
 
+  test "the screen lists the requests waiting for an answer and nothing else" do
+    profile.go_online!
+    waiting = Stop.request!(customer_name: "Ana", address: "Rua A 10", items: "2 empanadas")
+    taken = Stop.request!(customer_name: "Bo", address: "Rua B 20")
+    taken.accept!
+
+    get hawker_path
+
+    assert_select "#stop_#{waiting.id}" do
+      assert_select "p", /Ana/
+      assert_select "p", /Rua A 10/
+      assert_select "input[name=?][value=?]", "state", "accepted"
+      assert_select "input[name=?][value=?]", "state", "declined"
+    end
+    assert_select "#stop_#{taken.id}", count: 0
+  end
+
+  test "nothing is waiting to be answered while the hawker is not working" do
+    get hawker_path
+
+    assert_select "ul.requests", count: 0
+  end
+
   test "an unknown state changes nothing" do
     profile.go_online!
 
