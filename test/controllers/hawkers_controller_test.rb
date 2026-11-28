@@ -2,7 +2,7 @@ require "test_helper"
 
 class HawkersControllerTest < ActionDispatch::IntegrationTest
   test "the screen offers to start working while idle" do
-    get hawker_path
+    get hawker_path, headers: hawker_auth
 
     assert_response :success
     assert_select "h1", "You are not working"
@@ -14,7 +14,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
   test "the screen offers to stop working and to pause while working" do
     profile.go_online!
 
-    get hawker_path
+    get hawker_path, headers: hawker_auth
 
     assert_select "h1", "You are working"
     assert_select "input[name=?][value=?]", "state", "stopped"
@@ -22,7 +22,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "going online from the screen starts working and broadcasting" do
-    patch hawker_path, params: { state: "working" }
+    patch hawker_path, params: { state: "working" }, headers: hawker_auth
 
     assert_redirected_to hawker_path
     assert profile.working?
@@ -33,7 +33,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
     profile.go_online!
     Stop.request!(customer_name: "Ana", address: "Rua A 10")
 
-    patch hawker_path, params: { state: "stopped" }
+    patch hawker_path, params: { state: "stopped" }, headers: hawker_auth
 
     assert_not profile.working?
     assert_empty Stop.requested
@@ -42,12 +42,12 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
   test "pausing stops broadcasting without ending the working day" do
     profile.go_online!
 
-    patch hawker_path, params: { state: "paused" }
+    patch hawker_path, params: { state: "paused" }, headers: hawker_auth
 
     assert profile.working?
     assert_not profile.broadcasting?
 
-    patch hawker_path, params: { state: "broadcasting" }
+    patch hawker_path, params: { state: "broadcasting" }, headers: hawker_auth
 
     assert profile.broadcasting?
   end
@@ -58,7 +58,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
     taken = Stop.request!(customer_name: "Bo", address: "Rua B 20")
     taken.accept!
 
-    get hawker_path
+    get hawker_path, headers: hawker_auth
 
     assert_select "#stop_#{waiting.id}" do
       assert_select "p", /Ana/
@@ -70,7 +70,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "nothing is waiting to be answered while the hawker is not working" do
-    get hawker_path
+    get hawker_path, headers: hawker_auth
 
     assert_select "ul.requests", count: 0
   end
@@ -83,7 +83,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
     early.accept!
     Stop.request!(customer_name: "Caio", address: "Rua C 30")
 
-    get hawker_path
+    get hawker_path, headers: hawker_auth
 
     assert_select "#workspace p.counts", "1 waiting · 2 on the route"
     assert_select "#workspace ol.route li", count: 2
@@ -94,7 +94,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
   test "everything starts empty on the route" do
     profile.go_online!
 
-    get hawker_path
+    get hawker_path, headers: hawker_auth
 
     assert_select "#workspace p.counts", "0 waiting · 0 on the route"
     assert_select "#workspace ol.route", count: 0
@@ -108,7 +108,7 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
     arrived.accept!
     arrived.arrive!
 
-    get hawker_path
+    get hawker_path, headers: hawker_auth
 
     assert_select "#route_stop_#{accepted.id}" do
       assert_select "input[name=?][value=?]", "state", "arrived"
@@ -123,10 +123,42 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
   test "an unknown state changes nothing" do
     profile.go_online!
 
-    patch hawker_path, params: { state: "closed" }
+    patch hawker_path, params: { state: "closed" }, headers: hawker_auth
 
     assert_response :bad_request
     assert profile.working?
     assert profile.broadcasting?
+  end
+
+  test "the desk asks for credentials" do
+    get hawker_path
+
+    assert_response :unauthorized
+    assert_match(/Basic/, response.headers["WWW-Authenticate"])
+  end
+
+  test "wrong credentials do not reach the desk" do
+    get hawker_path, headers: hawker_auth(password: "guess")
+
+    assert_response :unauthorized
+  end
+
+  test "the deciding state cannot be changed without credentials" do
+    patch hawker_path, params: { state: "working" }
+
+    assert_response :unauthorized
+    assert_not profile.working?
+  end
+
+  test "the right credentials reach the desk and can use it" do
+    get hawker_path, headers: hawker_auth
+
+    assert_response :success
+    assert_select "h1", "You are not working"
+
+    patch hawker_path, params: { state: "working" }, headers: hawker_auth
+
+    assert_redirected_to hawker_path
+    assert profile.working?
   end
 end

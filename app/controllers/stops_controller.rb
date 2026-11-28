@@ -1,4 +1,6 @@
 class StopsController < ApplicationController
+  before_action :authenticate_hawker, only: :update
+
   def create
     attributes = params.require(:stop).permit(:customer_name, :address, :items)
 

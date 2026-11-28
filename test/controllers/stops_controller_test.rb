@@ -41,7 +41,7 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     profile.go_online!
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
 
-    patch stop_path(stop), params: { state: "accepted" }, as: :turbo_stream
+    patch stop_path(stop), params: { state: "accepted" }, as: :turbo_stream, headers: hawker_auth
 
     assert_response :success
     assert_equal "accepted", stop.reload.status
@@ -55,7 +55,7 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     profile.go_online!
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
 
-    patch stop_path(stop), params: { state: "declined" }, as: :turbo_stream
+    patch stop_path(stop), params: { state: "declined" }, as: :turbo_stream, headers: hawker_auth
 
     assert_response :success
     assert_equal "declined", stop.reload.status
@@ -69,7 +69,7 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
     stop.accept!
 
-    patch stop_path(stop), params: { state: "declined" }, as: :turbo_stream
+    patch stop_path(stop), params: { state: "declined" }, as: :turbo_stream, headers: hawker_auth
 
     assert_response :conflict
     assert_equal "accepted", stop.reload.status
@@ -79,7 +79,7 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     profile.go_online!
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
 
-    patch stop_path(stop), params: { state: "accepted" }
+    patch stop_path(stop), params: { state: "accepted" }, headers: hawker_auth
 
     assert_redirected_to hawker_path
     assert_equal "accepted", stop.reload.status
@@ -90,7 +90,7 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
     stop.accept!
 
-    patch stop_path(stop), params: { state: "arrived" }, as: :turbo_stream
+    patch stop_path(stop), params: { state: "arrived" }, as: :turbo_stream, headers: hawker_auth
 
     assert_response :success
     assert_equal "arrived", stop.reload.status
@@ -105,7 +105,7 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     stop.accept!
     stop.arrive!
 
-    patch stop_path(stop), params: { state: "fulfilled" }, as: :turbo_stream
+    patch stop_path(stop), params: { state: "fulfilled" }, as: :turbo_stream, headers: hawker_auth
 
     assert_response :success
     assert_equal "fulfilled", stop.reload.status
@@ -118,7 +118,7 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
     stop.accept!
 
-    patch stop_path(stop), params: { state: "fulfilled" }, as: :turbo_stream
+    patch stop_path(stop), params: { state: "fulfilled" }, as: :turbo_stream, headers: hawker_auth
 
     assert_response :conflict
     assert_equal "accepted", stop.reload.status
@@ -128,9 +128,19 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     profile.go_online!
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
 
-    patch stop_path(stop), params: { state: "cooked" }
+    patch stop_path(stop), params: { state: "cooked" }, headers: hawker_auth
 
     assert_response :bad_request
+    assert_equal "requested", stop.reload.status
+  end
+
+  test "answering a request needs the hawker credentials" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+
+    patch stop_path(stop), params: { state: "accepted" }
+
+    assert_response :unauthorized
     assert_equal "requested", stop.reload.status
   end
 end

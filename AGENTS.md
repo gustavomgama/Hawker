@@ -61,7 +61,7 @@ Run in this order; cheapest first. Each is expected to pass with the stated outp
 | `ruby bin/ci` | every check below in one run | all steps pass, exit `0` |
 | `ruby bin/rails zeitwerk:check` | autoloading/eager-load integrity, catches misplaced or misnamed files | `All is good!` |
 | `ruby bin/rubocop` | omakase style | `37 files inspected, no offenses detected` (count grows) |
-| `ruby bin/rails test` | domain rules and state transitions | `41 runs, 162 assertions, 0 failures` (counts grow) |
+| `ruby bin/rails test` | domain rules and state transitions | `46 runs, 177 assertions, 0 failures` (counts grow) |
 | `ruby bin/brakeman --no-pager` | security static analysis | `No warnings found`, exit `0` |
 | `ruby bin/bundler-audit check --update` | CVEs against `Gemfile.lock` via ruby-advisory-db | `No vulnerabilities found` |
 | `ruby bin/importmap audit` | vulnerable pinned JS packages | `No vulnerable packages found` |
@@ -156,7 +156,8 @@ with a process manager instead of bolting onto the current script.
 - Keep `get "up" => "rails/health#show"` as `:rails_health_check`. Deploy health checks depend on it.
 - `root "home#index"` is the customer screen: `HomeController` reads `HawkerProfile.instance` and renders the working/not-working state, plus the request form only while working. `resources :stops, only: :create` turns a submitted request into a `Stop` and redirects home with a `notice`; a submission that arrives after the hawker stopped is refused with an `alert` and writes nothing. The layout renders both flashes.
 - `resources :stops, only: %i[create update]` also carries the hawker's answer: `update` takes one `state` param (`accepted`, `declined`, `arrived`, `fulfilled`), calls `accept!`/`decline!`/`arrive!`/`fulfill!`, answers `400` for anything else and `409` when `Stop::InvalidTransition` says the row already moved. With Turbo it replaces `#workspace` from `hawkers/_workspace`; without it, a redirect to `hawker_path`. `#workspace` is the whole answerable surface — counts, `Stop.requested` in creation order, and `Stop.on_route` in `sequence` order — so replacing it is the only way the lists and the counts cannot drift; request rows carry `dom_id(stop)` and route rows `dom_id(stop, :route)`, so a stop on the route never collides with a request's id.
-- `resource :hawker, only: %i[show update]` is the hawker's own screen: `show` renders both states, `update` takes one `state` param (`working`, `stopped`, `paused`, `broadcasting`) and calls the matching `HawkerProfile` intent method, answering `400` for anything else. The route is inferred as `HawkersController` because singular resources still pluralise the controller. Nothing guards this screen yet; `TASK.md` carries the open question.
+- `resource :hawker, only: %i[show update]` is the hawker's own screen: `show` renders both states, `update` takes one `state` param (`working`, `stopped`, `paused`, `broadcasting`) and calls the matching `HawkerProfile` intent method, answering `400` for anything else. The route is inferred as `HawkersController` because singular resources still pluralise the controller.
+- Both hawker actions and `StopsController#update` are behind `authenticate_hawker` (`ApplicationController`): HTTP basic, compared by Rails' `http_basic_authenticate_or_request_with`, credentials read per request from `HAWKER_USERNAME`/`HAWKER_PASSWORD`. Missing variables raise on the request, not at boot. `HomeController` and `StopsController#create` stay open — customers have no credentials.
 
 ---
 
@@ -225,7 +226,7 @@ Job rules:
 - Mass assignment: explicit `permit` keys only. No `params.to_h` into `create`.
 - File uploads: validate content type and size in the model. `image_processing` is commented out in the `Gemfile`, so `variant` calls raise — add it before using transformations.
 - `config/initializers/filter_parameter_logging.rb` already filters passwords and tokens. Add new sensitive params there, not in a `logger` call.
-- Auth does not exist yet. When it arrives: `bcrypt` is commented out in the `Gemfile` and must be uncommented for `has_secure_password`; session cookies need `httponly: true, secure: true, same_site: :lax`; login gets `rate_limit`; authorization is per-resource, never a UI toggle.
+- Auth today is HTTP basic for the hawker surface only, decided by the user as an interim: `authenticate_hawker` guards `HawkersController` and `StopsController#update`, credentials come from `HAWKER_USERNAME`/`HAWKER_PASSWORD` on each request, and Rails compares them in constant time. There is no session, no logout and no customer identity. A real login (item 15) needs the user's decision before it replaces this: `bcrypt` is commented out in the `Gemfile`, `hawker_profiles` has no `password_digest`, session cookies would need `httponly: true, secure: true, same_site: :lax`, and login would get `rate_limit`.
 - Active Storage, Action Text and Action Mailbox engines are required in `config/application.rb` but no tables exist (`db/` has no migrations). Any `has_one_attached`, rich text field or inbound mailbox raises until you run the corresponding `:install` task and migrate.
 - Redirects to user-supplied URLs need an allowlist. Brakeman flags these; so do reviewers.
 
@@ -300,6 +301,7 @@ inside the gate. Transactional tests, no fixtures yet: each test builds what it 
 | No `db/migrate`, no `db/schema.rb` | `db:prepare` has nothing to build | the first migration creates both |
 | `db:prepare` fails | `fe_sendauth: no password supplied` on `localhost:5432` | set `DATABASE_URL` or `database.yml` credentials |
 | `.env` | never loaded (no `dotenv-rails`) | export in the shell |
+| `HAWKER_USERNAME` / `HAWKER_PASSWORD` unset | every hawker action raises `KeyError` on the request (boot and `zeitwerk:check` stay clean) | export both in the shell; tests default them to `hawker` / `secret` in `test/test_helper.rb` |
 | `cssbundling-rails` | installed with no `package.json` | no Tailwind/Sass until you add a build |
 | Solid trio | gems installed, zero configuration, cable points at `redis` without the gem | §10 |
 | Active Storage / Text / Mailbox | engines required, no tables | run `:install` + migrate before using |

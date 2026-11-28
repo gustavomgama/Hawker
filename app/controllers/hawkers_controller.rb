@@ -1,4 +1,6 @@
 class HawkersController < ApplicationController
+  before_action :authenticate_hawker
+
   def show
     @profile = HawkerProfile.instance
     @requests = Stop.requested.order(:created_at)
