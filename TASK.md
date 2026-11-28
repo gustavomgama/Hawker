@@ -7,7 +7,8 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 - [x] Root route and customer screen: reads the singleton `HawkerProfile`, renders "Your hawker is working" or "not working", with tests for both states
 - [x] Customer request form: posts an address and items, creates the stop through `Stop.request!`, redirects, test
 - [x] Refused request while offline: honest message, no record written, test
-- [ ] Hawker screen with a simple guard: toggle online/offline and pause/resume, tests
+- [x] Hawker screen: toggle online/offline and pause/resume, tests
+- [ ] Guard the hawker screen: it is reachable by anyone until login exists
 - [ ] Hawker sees requested stops and can accept or decline, updating without a reload
 - [ ] Hawker route list: accepted stops in `sequence` order plus the requested-versus-accepted stop count, test
 - [ ] Stop lifecycle from the hawker screen: arrive, fulfil, test
@@ -19,7 +20,7 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 
 ## Blocked
 
-Nothing yet.
+* What guards the hawker screen until real login exists: HTTP basic from credentials, a single shared token, or leave it open? Every stopgap is either a new auth scheme or bypassable behind Thruster, so this is the user's call.
 
 ## Needs a decision from the user
 

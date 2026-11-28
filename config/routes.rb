@@ -12,4 +12,5 @@ Rails.application.routes.draw do
   root "home#index"
 
   resources :stops, only: :create
+  resource :hawker, only: %i[show update]
 end

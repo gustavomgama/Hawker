@@ -1,0 +1,21 @@
+<main class="desk" data-state="<%= @profile.working? ? "working" : "not-working" %>">
+  <p class="lamp" aria-hidden="true"></p>
+  <h1 class="desk-state"><%= @profile.working? ? "You are working" : "You are not working" %></h1>
+
+  <%= form_with url: hawker_path, method: :patch, class: "control" do |form| %>
+    <%= form.hidden_field :state, value: @profile.working? ? "stopped" : "working" %>
+    <%= form.submit @profile.working? ? "Stop working" : "Start working", class: "button" %>
+  <% end %>
+
+  <% if @profile.working? %>
+    <p class="desk-note">Stopping voids every request and drops accepted stops.</p>
+
+    <div class="desk-panel">
+      <p class="desk-label"><%= @profile.broadcasting? ? "Broadcasting" : "Paused" %></p>
+      <%= form_with url: hawker_path, method: :patch, class: "control" do |form| %>
+        <%= form.hidden_field :state, value: @profile.broadcasting? ? "paused" : "broadcasting" %>
+        <%= form.submit @profile.broadcasting? ? "Pause" : "Resume", class: "button button--quiet" %>
+      <% end %>
+    </div>
+  <% end %>
+</main>

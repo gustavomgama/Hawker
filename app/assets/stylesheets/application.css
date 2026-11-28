@@ -42,7 +42,7 @@ body {
   box-shadow: 0 0 0 0.45rem rgb(240 180 41 / 14%);
 }
 
-.stall[data-state="not-working"] .lamp {
+[data-state="not-working"] .lamp {
   background: var(--dim);
   box-shadow: none;
 }
@@ -87,7 +87,7 @@ body {
   color: rgb(239 231 214 / 78%);
 }
 
-.ask :is(input, textarea) {
+.ask :is(input, textarea):not([type="submit"]) {
   box-sizing: border-box;
   min-height: 44px;
   padding: 0.6rem 0;
@@ -105,26 +105,90 @@ body {
   resize: vertical;
 }
 
-.ask :is(input, textarea):focus-visible {
+.ask :is(input, textarea):not([type="submit"]):focus-visible {
   outline: 2px solid var(--lamp);
   outline-offset: 3px;
   border-bottom-color: transparent;
 }
 
-.ask input[type="submit"] {
+.button {
   min-height: 44px;
-  margin-top: 0.4rem;
   padding: 0.8rem 1.4rem;
   border: 0;
   border-radius: 2px;
   background: var(--lamp);
   color: var(--stall);
+  font: inherit;
   font-size: 1rem;
   font-weight: 600;
   justify-self: start;
   cursor: pointer;
 }
 
-.ask input[type="submit"]:hover {
+.button:hover {
   background: #f7c654;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--bone);
+  outline-offset: 3px;
+}
+
+.button--quiet {
+  border: 1px solid rgb(239 231 214 / 30%);
+  background: transparent;
+  color: var(--bone);
+}
+
+.button--quiet:hover {
+  background: rgb(239 231 214 / 8%);
+}
+
+.desk {
+  box-sizing: border-box;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: clamp(1.5rem, 6vw, 4.5rem);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.desk-state {
+  margin: 0;
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.desk-note {
+  margin: 0;
+  max-width: 32ch;
+  font-size: 0.85rem;
+  color: rgb(239 231 214 / 62%);
+}
+
+.desk-panel {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(239 231 214 / 16%);
+}
+
+.desk-label {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: rgb(239 231 214 / 78%);
+}
+
+.control {
+  display: flex;
+  justify-content: flex-start;
 }
