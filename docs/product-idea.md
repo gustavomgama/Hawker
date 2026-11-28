@@ -250,15 +250,18 @@ Realities, not decisions.
 ## 11. Current state of the repository
 
 The pre-existing scaffold is **disregarded** (decision 4). What exists is a running
-Rails application with no product in it:
+Rails application with the first product slice in it:
 
 - Rails 8.1.4.1 on Ruby 4.0.10, PostgreSQL, Propshaft, Hotwire, Puma — a usable base.
-- `solid_queue`, `solid_cache`, `solid_cable` installed but **not wired**. Background
-  jobs will be needed for routing and for pruning position history.
-- No models, no migrations, no authentication, no tests, and no database.
+- `HawkerProfile`, `Stop`, `Customer` and `Position` exist; the availability and stop
+  state machines, the customer screen and the hawker workspace are tested.
+- HTTP basic guards the hawker surface; customers still have no identity.
+- Position pings are append-only and are pruned when the hawker goes offline.
+- `solid_queue` and `solid_cable` are wired for production on their own databases;
+  `solid_cache` is installed and still unwired.
 - `bin/ci` is green (autoloading, rubocop, brakeman, gem audit, i18n, rubycritic), so
   the gate exists before the first line of product code.
-- The `DriverTracker` → `Hawker` rename is done: module, three databases, image and
+- The `DriverTracker` → `Hawker` rename is done: module, every database, image and
   page title. `DriverTracker` appears nowhere.
 
 ---

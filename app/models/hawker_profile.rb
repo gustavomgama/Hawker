@@ -1,5 +1,6 @@
 class HawkerProfile < ApplicationRecord
   after_update_commit :broadcast_stall, if: -> { saved_change_to_availability? }
+  after_update_commit :prune_positions, if: -> { saved_change_to_availability? && !working? }
 
   def self.instance
     find_or_create_by!(id: 1)
@@ -33,5 +34,9 @@ class HawkerProfile < ApplicationRecord
 
   def broadcast_stall
     broadcast_replace_to "hawker_profile", target: "stall", partial: "home/stall", locals: { profile: self }
+  end
+
+  def prune_positions
+    PrunePositionsJob.perform_later
   end
 end

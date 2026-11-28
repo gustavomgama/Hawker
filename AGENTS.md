@@ -30,7 +30,7 @@ tree wins: fix this file in the same change.
 | Web server | Puma (3 threads default), Thruster in front | `config/puma.rb`, `Dockerfile` |
 | Assets | Propshaft (no build step), importmap pins | `Gemfile`, `config/importmap.rb` |
 | Front end | ERB + Hotwire (Turbo, Stimulus) | `Gemfile`, `app/views` |
-| Jobs / cache / cable | `solid_queue`, `solid_cache`, `solid_cable` installed, **not wired** | `Gemfile` vs `config/` |
+| Jobs / cable | `solid_queue` and `solid_cable` wired for production (own `queue`/`cable` databases); `solid_cache` installed, unwired | `config/environments/production.rb`, `config/cable.yml`, `db/queue_schema.rb`, `db/cable_schema.rb` |
 | Deploy | Kamal + Docker multi-stage, non-root user, `/up` health check | `Dockerfile`, `config/routes.rb` |
 | Lint / security / audit | `rubocop-rails-omakase`, `brakeman`, `bundler-audit`, `i18n-tasks`, `rubycritic`, `strong_migrations`, `prosopite` | `Gemfile`, `config/ci.rb` |
 | CI | `bin/ci` locally and in GitHub Actions, 1 job, every branch, `postgres:16` service; Dependabot weekly | `.github/workflows/ci.yml`, `.github/dependabot.yml` |
@@ -60,8 +60,8 @@ Run in this order; cheapest first. Each is expected to pass with the stated outp
 | --- | --- | --- |
 | `ruby bin/ci` | every check below in one run | all steps pass, exit `0` |
 | `ruby bin/rails zeitwerk:check` | autoloading/eager-load integrity, catches misplaced or misnamed files | `All is good!` |
-| `ruby bin/rubocop` | omakase style | `37 files inspected, no offenses detected` (count grows) |
-| `ruby bin/rails test` | domain rules and state transitions | `46 runs, 177 assertions, 0 failures` (counts grow) |
+| `ruby bin/rubocop` | omakase style | `43 files inspected, no offenses detected` (count grows) |
+| `ruby bin/rails test` | domain rules and state transitions | `52 runs, 197 assertions, 0 failures` (counts grow) |
 | `ruby bin/brakeman --no-pager` | security static analysis | `No warnings found`, exit `0` |
 | `ruby bin/bundler-audit check --update` | CVEs against `Gemfile.lock` via ruby-advisory-db | `No vulnerabilities found` |
 | `ruby bin/importmap audit` | vulnerable pinned JS packages | `No vulnerable packages found` |
@@ -140,7 +140,8 @@ with a process manager instead of bolting onto the current script.
 - No business logic in `after_save`/`before_create`. Side effects (mail, jobs, cache busting) go in `after_commit`, and only when the effect needs committed data.
 - No raw `connection.execute` for anything ActiveRecord can express.
 - Seeds must be idempotent: `find_or_create_by!` / `upsert_all`, never bare `create!` that explodes on rerun.
-- `db/cache_migrate`, `db/queue_migrate`, `db/cable_migrate` do not exist yet. Creating them is part of wiring the Solid stack (§10), not a free-standing task.
+- `db/queue_schema.rb` and `db/cable_schema.rb` are the Solid schemas; `db:prepare` loads each into its own production database (`hawker_production_queue`, `hawker_production_cable`, `migrations_paths` already in `database.yml`). Change them with a migration in `db/queue_migrate`/`db/cable_migrate`, not by editing the schema file.
+- `positions` is append-only: `latitude`/`longitude` decimals with the DB range enforced in the model, `created_at` is the recorded time and is indexed. `PrunePositionsJob` deletes every row and is enqueued by `HawkerProfile`'s `after_update_commit` when availability leaves `online` — retention is exactly "until the hawker goes offline".
 - `strong_migrations` is installed and guards `db:migrate` in every environment: it raises on operations that lock a table or rewrite it unsafely. Never disable it to push a migration through — split the migration instead.
 
 ---
@@ -157,7 +158,8 @@ with a process manager instead of bolting onto the current script.
 - `root "home#index"` is the customer screen: `HomeController` reads `HawkerProfile.instance` and renders the working/not-working state, plus the request form only while working. `resources :stops, only: :create` turns a submitted request into a `Stop` and redirects home with a `notice`; a submission that arrives after the hawker stopped is refused with an `alert` and writes nothing. The layout renders both flashes.
 - `resources :stops, only: %i[create update]` also carries the hawker's answer: `update` takes one `state` param (`accepted`, `declined`, `arrived`, `fulfilled`), calls `accept!`/`decline!`/`arrive!`/`fulfill!`, answers `400` for anything else and `409` when `Stop::InvalidTransition` says the row already moved. With Turbo it replaces `#workspace` from `hawkers/_workspace`; without it, a redirect to `hawker_path`. `#workspace` is the whole answerable surface — counts, `Stop.requested` in creation order, and `Stop.on_route` in `sequence` order — so replacing it is the only way the lists and the counts cannot drift; request rows carry `dom_id(stop)` and route rows `dom_id(stop, :route)`, so a stop on the route never collides with a request's id.
 - `resource :hawker, only: %i[show update]` is the hawker's own screen: `show` renders both states, `update` takes one `state` param (`working`, `stopped`, `paused`, `broadcasting`) and calls the matching `HawkerProfile` intent method, answering `400` for anything else. The route is inferred as `HawkersController` because singular resources still pluralise the controller.
-- Both hawker actions and `StopsController#update` are behind `authenticate_hawker` (`ApplicationController`): HTTP basic, compared by Rails' `http_basic_authenticate_or_request_with`, credentials read per request from `HAWKER_USERNAME`/`HAWKER_PASSWORD`. Missing variables raise on the request, not at boot. `HomeController` and `StopsController#create` stay open — customers have no credentials.
+- `resources :positions, only: :create` is the hawker app's position ping: `before_action :authenticate_hawker`, `204` after storing, `409` and nothing written unless `HawkerProfile#broadcasting?` (paused or offline refuses server-side), `422` for a coordinate outside ±90/±180.
+- Both hawker actions, `StopsController#update` and `PositionsController#create` are behind `authenticate_hawker` (`ApplicationController`): HTTP basic, compared by Rails' `http_basic_authenticate_or_request_with`, credentials read per request from `HAWKER_USERNAME`/`HAWKER_PASSWORD`. Missing variables raise on the request, not at boot. `HomeController` and `StopsController#create` stay open — customers have no credentials.
 
 ---
 
@@ -165,7 +167,7 @@ with a process manager instead of bolting onto the current script.
 
 - ERB only. Turbo Drive is automatic on links and forms; Turbo Frames scope partial navigation; Turbo Streams update after mutations; Stimulus adds isolated behaviour. No React/Vue/jQuery, no client-side router.
 - **Hotwire is wired.** `config/importmap.rb` pins Turbo, Stimulus and `app/javascript/controllers`; `app/javascript/application.js` imports them; the layout renders `javascript_importmap_tags`. Add a package with `ruby bin/importmap pin <name>`, add a Stimulus controller under `app/javascript/controllers/`, and `bin/importmap audit` runs in the gate.
-- The customer screen subscribes with `turbo_stream_from "hawker_profile"`; `HawkerProfile` broadcasts a replace of `home/_stall` (target `stall`) after any change to `availability`, so going online or offline flips the page without a reload. Pausing changes `broadcasting`, not `availability`, and deliberately does not rebroadcast. This works on the development `async` cable adapter; production cable is still `redis` without the gem, so streams stay dev-only until the Solid stack is wired (§10).
+- The customer screen subscribes with `turbo_stream_from "hawker_profile"`; `HawkerProfile` broadcasts a replace of `home/_stall` (target `stall`) after any change to `availability`, so going online or offline flips the page without a reload. Pausing changes `broadcasting`, not `availability`, and deliberately does not rebroadcast. This runs on the development `async` adapter and, in production, on `solid_cable` over its own database (§10).
 - Styles: the single stylesheet is `app/assets/stylesheets/application.css`, linked with `stylesheet_link_tag :app`. **`:app` is correct** in Rails 8.1 — verified to resolve to `application.css` with a digest. Do not "fix" it to `"application"`.
 - No CSS build step. `cssbundling-rails` is in the `Gemfile` but there is no `package.json`, so it does nothing; do not assume Tailwind/Sass is available.
 - No inline `<script>` or `<style>`. The CSP initializer is fully commented out, so nothing is protecting inline content today — enable `content_security_policy` before adding third-party scripts.
@@ -178,24 +180,24 @@ with a process manager instead of bolting onto the current script.
 
 ## 10. Jobs, cache, cable
 
-Current state, verified: the three Solid gems are installed but nothing is
-configured. There is no `connects_to`, no `db/*_migrate` directory, and
-`config/cable.yml` production still says `adapter: redis` while the `redis` gem
-is not in the lockfile — production cable would fail at boot.
+Current state, verified: `solid_queue` and `solid_cable` are wired for production.
+`solid_cache` is installed and still unwired. `bin/jobs` runs the queue worker
+standalone; `SOLID_QUEUE_IN_PUMA=1` runs it inside Puma.
 
 | Environment | Cache | Jobs | Cable |
 | --- | --- | --- | --- |
 | development | `:memory_store` | default (`:async`) | `:async` |
-| test | `:null_store` | default | `:test` |
-| production | defaults to memory until wired | defaults to `:async` — **jobs are lost on restart** | `redis` — **gem missing** |
+| test | `:null_store` | default (`:test`) | `:test` |
+| production | defaults to memory until wired | `:solid_queue`, own `hawker_production_queue` database | `:solid_cable`, own `hawker_production_cable` database |
 
-To wire production properly:
+Wired by: `config.active_job.queue_adapter = :solid_queue` plus
+`config.solid_queue.connects_to = { database: { writing: :queue } }` and the
+`solid_cable` adapter in `config/cable.yml`. The install tasks produced
+`config/queue.yml`, `config/recurring.yml`, `bin/jobs`, `db/queue_schema.rb` and
+`db/cable_schema.rb`; `db:prepare` builds the tables.
 
-1. `config.active_job.queue_adapter = :solid_queue` and `config.solid_queue.connects_to = { database: { writing: :queue } }`.
-2. `config.cache_store = :solid_cache_store`.
-3. `config/cable.yml` production → `adapter: solid_cable`, `connects_to: { database: { writing: :cable } }`.
-4. `ruby bin/rails solid_queue:install`, `solid_cache:install`, `solid_cable:install`, then `db:prepare`.
-5. `SOLID_QUEUE_IN_PUMA=1` runs the worker inside Puma for single-server deploys (`config/puma.rb` already supports it).
+Still unwired, only if it is needed: `config.cache_store = :solid_cache_store`
+and `ruby bin/rails solid_cache:install`.
 
 Job rules:
 
@@ -285,7 +287,7 @@ inside the gate. Transactional tests, no fixtures yet: each test builds what it 
 - **The Docker build is broken today.** The build stage copies `package.json` and `yarn.lock` and runs `yarn install --immutable`, but neither file exists in this repo. With no JS toolchain in the app, the `ARG NODE_VERSION`/`ARG YARN_VERSION` lines, the `node-build` download, `corepack enable && yarn set version …`, and both yarn lines are dead weight — remove them before the first deploy.
 - `BUNDLE_WITHOUT="development"` does not exclude the `development, test` group, so `debug`, `brakeman` and `rubocop-rails-omakase` are installed in the image. Add `test` to `BUNDLE_WITHOUT` if image size matters.
 - Assets precompile in the build stage with `SECRET_KEY_BASE_DUMMY=1`; no Node needed for Propshaft.
-- Do not deploy while the Solid stack is unwired (§10): background jobs would run `:async` inside Puma and vanish on restart, and Action Cable would fail for a missing `redis` gem.
+- Solid queue and cable are wired (§10), so deploys get durable jobs and a working position stream; `solid_cache` is still memory. `db:prepare` in the entrypoint builds the queue and cable tables on first boot, so the production Postgres role needs rights on all three databases.
 - `config/deploy.yml` does not exist yet. Adding Kamal deploy config is its own task with its own spec.
 
 ---
@@ -298,12 +300,13 @@ inside the gate. Transactional tests, no fixtures yet: each test builds what it 
 | `bin/*` shebangs | must stay `#!/usr/bin/env ruby`; `app:update` can regress them to `ruby.exe`, breaking Linux CI and Docker | revert any such change |
 | Local interpreter | machine has Ruby 4.0.9 at `C:\Ruby40-x64`; project pins 4.0.10 | install 4.0.10 before debugging gem errors |
 | `bundle outdated` | lists `marcel 1.2.1` and `net-ssh 7.3.10` | capped by `activestorage (~> 1.0)` and `ed25519 (~> 7.3)`; not upgradable, do not force |
-| No `db/migrate`, no `db/schema.rb` | `db:prepare` has nothing to build | the first migration creates both |
+| `db/queue_schema.rb`, `db/cable_schema.rb` | generated by the Solid install tasks, production-only | never hand-edit; add a migration under `db/queue_migrate`/`db/cable_migrate` |
 | `db:prepare` fails | `fe_sendauth: no password supplied` on `localhost:5432` | set `DATABASE_URL` or `database.yml` credentials |
 | `.env` | never loaded (no `dotenv-rails`) | export in the shell |
 | `HAWKER_USERNAME` / `HAWKER_PASSWORD` unset | every hawker action raises `KeyError` on the request (boot and `zeitwerk:check` stay clean) | export both in the shell; tests default them to `hawker` / `secret` in `test/test_helper.rb` |
 | `cssbundling-rails` | installed with no `package.json` | no Tailwind/Sass until you add a build |
-| Solid trio | gems installed, zero configuration, cable points at `redis` without the gem | §10 |
+| Migration file name | must be 14 contiguous digits: `20261128041500_create_positions.rb`; `2026_11_28_041500_…` fails with `wrong constant name 1128041500CreatePositions` | rename with contiguous digits and re-run |
+| Solid trio | `solid_queue` + `solid_cable` wired for production only; dev/test keep `:async`/`:test` and have no queue/cable database | do not expect real background execution or cross-process streams locally |
 | Active Storage / Text / Mailbox | engines required, no tables | run `:install` + migrate before using |
 | `bcrypt`, `image_processing` | commented out in the `Gemfile` | uncomment before `has_secure_password` / `variant` |
 | `coverage/` | untracked build output at repo root | now gitignored; do not `git add -A` it back |
@@ -338,7 +341,7 @@ inside the gate. Transactional tests, no fixtures yet: each test builds what it 
 - Any irreversible migration (destructive `change_column`, type narrowing, `drop_table`).
 - Adding a dependency that changes the deploy shape (Redis, Node, a second datastore, Sidekiq).
 - Overriding `.rubocop.yml` or adding `.brakeman.ignore` entries.
-- Wiring the Solid stack or adding Active Storage tables (schema-level, hard to reverse).
+- Wiring `solid_cache` or adding Active Storage tables (schema-level, hard to reverse).
 
 ---
 

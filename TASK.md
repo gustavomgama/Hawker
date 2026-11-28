@@ -15,15 +15,15 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 - [ ] Hawker login with `has_secure_password` and a session, protecting every hawker action, tests
 - [ ] Customer identity by phone, tying a request to the signed-in customer, tests
 - [x] Live availability: publish the profile state so the customer screen flips without a reload, test
-- [ ] `positions` table and an endpoint for the hawker app to post a position, pruned by a job, test
+- [x] `positions` table and an endpoint for the hawker app to post a position, pruned by a job, test
 - [ ] Customer sees the hawker's last known position and when it was recorded, test
 
 ## Blocked
 
 * Decided (user): HTTP basic from `HAWKER_USERNAME`/`HAWKER_PASSWORD` guards the hawker surface for now. Recorded in `AGENTS.md` §8/§12. Item 15 (real login) is therefore still open on the question of whether and when `has_secure_password` plus a session replaces basic auth; no `bcrypt` or `password_digest` work starts before that answer.
 * Hawker login (item 15) and customer phone identity (item 16) are both auth changes, which `AGENTS.md` §19 and the loop's stop rule put in the user's hands. Basic auth covers the hawker surface meanwhile; item 16 needs a decision on how a phone identifies a customer (verified by SMS, unverified, or a signed link).
-* `positions` (item 18) has its endpoint auth answered by the basic-auth decision above, and the user approved wiring `solid_queue` and `solid_cable`. Remaining before it can ship: run the three `:install` tasks, add `db/queue_migrate`/`db/cable_migrate`, set the adapters, `db:prepare`, and update `AGENTS.md` §10. That is a schema change, now sanctioned.
-* Item 19 depends on item 18 and on the unanswered paused-state question below (frozen position, greyed map, or text only), so it cannot be built without both.
+* Decided (user): positions are kept **until the hawker goes offline** — `PrunePositionsJob` deletes every row when `availability` leaves `online`, and a ping sent while not broadcasting is refused with `409` and writes nothing. `solid_queue` and `solid_cable` are wired for production (`AGENTS.md` §10); `solid_cache` stays unwired until something needs it.
+* Item 19 depends on item 18 (done) and on the unanswered paused-state question below (frozen position, greyed map, or text only), so it cannot be built without that.
 
 ## Needs a decision from the user
 

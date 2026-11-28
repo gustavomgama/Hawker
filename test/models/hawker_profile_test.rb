@@ -3,6 +3,7 @@ require "turbo/broadcastable/test_helper"
 
 class HawkerProfileTest < ActiveSupport::TestCase
   include Turbo::Broadcastable::TestHelper
+  include ActiveJob::TestHelper
 
   test "starts offline and not broadcasting" do
     assert_not profile.working?
@@ -74,6 +75,18 @@ class HawkerProfileTest < ActiveSupport::TestCase
     assert_turbo_stream_broadcasts "hawker_profile" do
       profile.go_offline!
     end
+  end
+
+  test "going offline discards every recorded position" do
+    profile.go_online!
+    Position.create!(latitude: 1, longitude: 2)
+
+    assert_enqueued_jobs 1, only: PrunePositionsJob do
+      profile.go_offline!
+    end
+    perform_enqueued_jobs
+
+    assert_empty Position.all
   end
 
   test "pausing does not broadcast the stall" do
