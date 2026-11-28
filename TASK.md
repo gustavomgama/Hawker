@@ -22,6 +22,8 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 
 * What guards the hawker screen until real login exists: HTTP basic from credentials, a single shared token, or leave it open? Every stopgap is either a new auth scheme or bypassable behind Thruster, so this is the user's call.
 * Hawker login (item 15) and customer phone identity (item 16) are both auth changes, which `AGENTS.md` §19 and the loop's stop rule put in the user's hands. Two answers are needed: uncomment `bcrypt` and add a `password_digest` migration plus sessions, and how the first hawker password gets provisioned (seed from an env var, Rails credentials, or a console-only task). No scheme is invented here.
+* `positions` (item 18) has no viable endpoint until login exists: with one hawker and no session, anyone on the internet could post positions and move the customer's view, so the endpoint is the same auth decision above. Its pruning job also needs a queue adapter that survives a restart, and `config/environments/production.rb` still leaves `queue_adapter` at the `:async` default, so the job would vanish with the process — wiring `solid_queue` is the schema/deploy change `AGENTS.md` §19 says to ask about first.
+* Item 19 depends on item 18 and on the unanswered paused-state question below (frozen position, greyed map, or text only), so it cannot be built without both.
 
 ## Needs a decision from the user
 
