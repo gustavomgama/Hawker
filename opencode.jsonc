@@ -1,0 +1,8 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // 93% kept free = auto-compacts at ~70k tokens used on this project's 1M-context model.
+  // Buffer is a share of each model's window: a 200k-window model would compact at ~14k used.
+  "compaction": {
+    "buffer": "93%"
+  }
+}
