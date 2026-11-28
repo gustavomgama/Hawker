@@ -8,3 +8,51 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+:root {
+  --stall: #14261d;
+  --bone: #efe7d6;
+  --lamp: #f0b429;
+  --dim: #63726a;
+}
+
+body {
+  margin: 0;
+  background: var(--stall);
+  color: var(--bone);
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.stall {
+  box-sizing: border-box;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 6vw, 4.5rem);
+}
+
+.lamp {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--lamp);
+  box-shadow: 0 0 0 0.45rem rgb(240 180 41 / 14%);
+}
+
+.stall[data-state="not-working"] .lamp {
+  background: var(--dim);
+  box-shadow: none;
+}
+
+.state {
+  margin: 0;
+  max-width: 20ch;
+  font-size: clamp(2.4rem, 8vw, 6rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}

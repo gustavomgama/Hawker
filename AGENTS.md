@@ -61,7 +61,7 @@ Run in this order; cheapest first. Each is expected to pass with the stated outp
 | `ruby bin/ci` | every check below in one run | all steps pass, exit `0` |
 | `ruby bin/rails zeitwerk:check` | autoloading/eager-load integrity, catches misplaced or misnamed files | `All is good!` |
 | `ruby bin/rubocop` | omakase style | `31 files inspected, no offenses detected` (count grows) |
-| `ruby bin/rails test` | domain rules and state transitions | `13 runs, 25 assertions, 0 failures` (counts grow) |
+| `ruby bin/rails test` | domain rules and state transitions | `15 runs, 31 assertions, 0 failures` (counts grow) |
 | `ruby bin/brakeman --no-pager` | security static analysis | `No warnings found`, exit `0` |
 | `ruby bin/bundler-audit check --update` | CVEs against `Gemfile.lock` via ruby-advisory-db | `No vulnerabilities found` |
 | `ruby bin/importmap audit` | vulnerable pinned JS packages | `No vulnerable packages found` |
@@ -154,7 +154,7 @@ with a process manager instead of bolting onto the current script.
 - Authorization happens in a `before_action` and returns `404`/`403` — never hide the control in the view only.
 - Status codes: `200` read, `201` created, `204` no content, `302` redirect after form, `422` validation failure, `404` missing or unauthorized resource.
 - Keep `get "up" => "rails/health#show"` as `:rails_health_check`. Deploy health checks depend on it.
-- There is no root route yet. Adding one means adding a controller, a view, and a test — not a `redirect_to` placeholder.
+- `root "home#index"` is the customer screen: `HomeController` reads `HawkerProfile.instance` and renders the working/not-working state. Every customer-facing page hangs off that one controller until a second resource exists.
 
 ---
 

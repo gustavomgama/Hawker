@@ -1,0 +1,4 @@
+<main class="stall" data-state="<%= @profile.working? ? "working" : "not-working" %>">
+  <p class="lamp" aria-hidden="true"></p>
+  <h1 class="state"><%= @profile.working? ? "Your hawker is working" : "Your hawker is not working" %></h1>
+</main>
