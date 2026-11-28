@@ -9,5 +9,7 @@ class StopsController < ApplicationController
     )
 
     redirect_to root_path, notice: "Your request is with the hawker."
+  rescue Stop::Unavailable
+    redirect_to root_path, alert: "Your hawker is not working, so nothing was sent."
   end
 end

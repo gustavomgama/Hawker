@@ -25,4 +25,15 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "form.ask", count: 0
   end
+
+  test "a request sent after the hawker stopped is refused and records nothing" do
+    assert_no_difference [ -> { Stop.count }, -> { Customer.count } ] do
+      post stops_path, params: { stop: { customer_name: "Ana", address: "Rua A 10" } }
+    end
+
+    assert_redirected_to root_path
+
+    follow_redirect!
+    assert_select "p.alert", "Your hawker is not working, so nothing was sent."
+  end
 end

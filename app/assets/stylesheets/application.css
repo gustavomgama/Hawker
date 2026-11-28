@@ -57,7 +57,8 @@ body {
   text-wrap: balance;
 }
 
-.notice {
+.notice,
+.alert {
   position: fixed;
   inset: 0 0 auto;
   margin: 0;
@@ -65,6 +66,10 @@ body {
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 0.9rem;
   color: var(--lamp);
+}
+
+.alert {
+  color: #f0926f;
 }
 
 .ask {
