@@ -25,6 +25,11 @@ ruby bin/rails db:seed
 ruby bin/dev
 ```
 
+In development and test `db:seed` also creates 8 customers with a stop in every
+status and 3 recent positions; production seeds only the profile, and stays
+offline. Re-seeding never overwrites a stop you already moved, so use
+`ruby bin/rails db:reset` for a fresh dataset.
+
 On Windows always call Rails as `ruby bin/rails …`; `bin/rails` has no `.exe` and
 PowerShell will not run it directly.
 
