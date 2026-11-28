@@ -26,7 +26,13 @@
     <% route.each do |stop| %>
       <li id="<%= dom_id(stop, :route) %>" class="route-stop">
         <span class="route-position"><%= stop.sequence %></span>
-        <span class="route-address"><%= stop.address %></span>
+        <div class="route-body">
+          <p class="route-address"><%= stop.address %></p>
+          <%= form_with url: stop_path(stop), method: :patch, class: "control" do |form| %>
+            <%= form.hidden_field :state, value: stop.status == "arrived" ? "fulfilled" : "arrived" %>
+            <%= form.submit stop.status == "arrived" ? "Fulfill" : "Arrive", class: "button button--quiet" %>
+          <% end %>
+        </div>
       </li>
     <% end %>
   </ol>

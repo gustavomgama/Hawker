@@ -11,7 +11,7 @@ Ordered. One unchecked item per loop iteration. Procedure: `docs/loop-prompt.md`
 - [ ] Guard the hawker screen: it is reachable by anyone until login exists
 - [x] Hawker sees requested stops and can accept or decline, updating without a reload
 - [x] Hawker route list: accepted stops in `sequence` order plus the requested-versus-accepted stop count, test
-- [ ] Stop lifecycle from the hawker screen: arrive, fulfil, test
+- [x] Stop lifecycle from the hawker screen: arrive, fulfil, test
 - [ ] Hawker login with `has_secure_password` and a session, protecting every hawker action, tests
 - [ ] Customer identity by phone, tying a request to the signed-in customer, tests
 - [ ] Live availability: publish the profile state so the customer screen flips without a reload, test

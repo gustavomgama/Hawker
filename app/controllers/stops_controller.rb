@@ -19,6 +19,8 @@ class StopsController < ApplicationController
     case params[:state]
     when "accepted" then stop.accept!
     when "declined" then stop.decline!
+    when "arrived" then stop.arrive!
+    when "fulfilled" then stop.fulfill!
     else return head :bad_request
     end
 

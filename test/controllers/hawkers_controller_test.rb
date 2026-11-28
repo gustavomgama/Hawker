@@ -100,6 +100,26 @@ class HawkersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#workspace ol.route", count: 0
   end
 
+  test "an accepted stop offers arrival and an arrived stop offers fulfilment" do
+    profile.go_online!
+    accepted = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+    accepted.accept!
+    arrived = Stop.request!(customer_name: "Bo", address: "Rua B 20")
+    arrived.accept!
+    arrived.arrive!
+
+    get hawker_path
+
+    assert_select "#route_stop_#{accepted.id}" do
+      assert_select "input[name=?][value=?]", "state", "arrived"
+      assert_select "input[name=?][value=?]", "state", "fulfilled", count: 0
+    end
+    assert_select "#route_stop_#{arrived.id}" do
+      assert_select "input[name=?][value=?]", "state", "fulfilled"
+      assert_select "input[name=?][value=?]", "state", "arrived", count: 0
+    end
+  end
+
   test "an unknown state changes nothing" do
     profile.go_online!
 

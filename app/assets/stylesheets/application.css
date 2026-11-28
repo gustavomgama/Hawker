@@ -264,5 +264,11 @@ body {
 }
 
 .route-address {
+  margin: 0;
   font-size: 1.05rem;
+}
+
+.route-body {
+  display: grid;
+  gap: 0.5rem;
 }

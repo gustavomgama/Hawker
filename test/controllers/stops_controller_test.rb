@@ -85,6 +85,45 @@ class StopsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "accepted", stop.reload.status
   end
 
+  test "arriving keeps the stop on the route" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+    stop.accept!
+
+    patch stop_path(stop), params: { state: "arrived" }, as: :turbo_stream
+
+    assert_response :success
+    assert_equal "arrived", stop.reload.status
+    assert_not_nil stop.arrived_at
+    assert_includes response.body, "1 on the route"
+    assert_includes response.body, "Rua A 10"
+  end
+
+  test "fulfilling takes an arrived stop off the route" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+    stop.accept!
+    stop.arrive!
+
+    patch stop_path(stop), params: { state: "fulfilled" }, as: :turbo_stream
+
+    assert_response :success
+    assert_equal "fulfilled", stop.reload.status
+    assert_includes response.body, "0 on the route"
+    assert_not_includes response.body, "Rua A 10"
+  end
+
+  test "a stop cannot be fulfilled before it is arrived" do
+    profile.go_online!
+    stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
+    stop.accept!
+
+    patch stop_path(stop), params: { state: "fulfilled" }, as: :turbo_stream
+
+    assert_response :conflict
+    assert_equal "accepted", stop.reload.status
+  end
+
   test "an unknown answer changes nothing" do
     profile.go_online!
     stop = Stop.request!(customer_name: "Ana", address: "Rua A 10")
