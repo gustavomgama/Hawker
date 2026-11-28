@@ -1,8 +1,10 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  // 93% kept free = auto-compacts at ~70k tokens used on this project's 1M-context model.
-  // Buffer is a share of each model's window: a 200k-window model would compact at ~14k used.
+  // The global config sets compaction.auto=false; re-enable it for this project.
+  // OpenCode 2.1.3 rejects buffer as a percentage and silently drops it, so the
+  // token form is used: 1M window - 930k kept free = compaction at ~70k used.
   "compaction": {
-    "buffer": "93%"
+    "auto": true,
+    "reserved": 930000
   }
 }

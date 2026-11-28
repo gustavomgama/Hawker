@@ -14,8 +14,6 @@ gem "importmap-rails"
 gem "turbo-rails"
 # Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
 gem "stimulus-rails"
-# Bundle and process CSS [https://github.com/rails/cssbundling-rails]
-gem "cssbundling-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
@@ -63,12 +61,12 @@ group :development, :test do
 
   # Static quality report: churn, complexity, duplication, smells [https://github.com/whitesmith/rubycritic]
   gem "rubycritic", require: false
+
+  # Detect N+1 queries in development and in tests [https://github.com/charkost/prosopite]
+  gem "prosopite"
 end
 
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
-
-  # Detect N+1 queries in development [https://github.com/charkost/prosopite]
-  gem "prosopite"
 end

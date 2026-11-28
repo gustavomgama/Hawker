@@ -23,17 +23,18 @@ tree wins: fix this file in the same change.
 
 | Piece | Value | Source of truth |
 | --- | --- | --- |
-| App / module | folder `Hawker`, module `DriverTracker` | `config/application.rb`, `config/database.yml` |
+| App / module | folder `Hawker`, module `Hawker` | `config/application.rb`, `config/database.yml` |
 | Rails | 8.1.4.1, `config.load_defaults 8.1` | `Gemfile`, `config/application.rb` |
 | Ruby | 4.0.10 | `.ruby-version`, `Dockerfile` `ARG RUBY_VERSION` |
-| Database | PostgreSQL, db `driver_tracker_development` / `_test` / `_production` | `config/database.yml` |
+| Database | PostgreSQL, db `hawker_development` / `_test` / `_production`, role `hawker` | `config/database.yml` |
 | Web server | Puma (3 threads default), Thruster in front | `config/puma.rb`, `Dockerfile` |
-| Assets | Propshaft (no build step), `importmap-rails` gem present | `Gemfile` |
+| Assets | Propshaft (no build step), importmap pins | `Gemfile`, `config/importmap.rb` |
 | Front end | ERB + Hotwire (Turbo, Stimulus) | `Gemfile`, `app/views` |
 | Jobs / cache / cable | `solid_queue`, `solid_cache`, `solid_cable` installed, **not wired** | `Gemfile` vs `config/` |
 | Deploy | Kamal + Docker multi-stage, non-root user, `/up` health check | `Dockerfile`, `config/routes.rb` |
 | Lint / security / audit | `rubocop-rails-omakase`, `brakeman`, `bundler-audit`, `i18n-tasks`, `rubycritic`, `strong_migrations`, `prosopite` | `Gemfile`, `config/ci.rb` |
-| CI | `bin/ci` locally and in GitHub Actions, 1 job, every branch, no DB service; Dependabot weekly | `.github/workflows/ci.yml`, `.github/dependabot.yml` |
+| CI | `bin/ci` locally and in GitHub Actions, 1 job, every branch, `postgres:16` service; Dependabot weekly | `.github/workflows/ci.yml`, `.github/dependabot.yml` |
+| Tests | Minitest, transactional, no fixtures yet | `test/` |
 | Agent config | `opencode.jsonc` (compaction), `.opencode/{agents,commands,plugins}` | repo root |
 
 Check the interpreter before debugging anything else: `ruby -v` must match
@@ -42,13 +43,12 @@ version error.
 
 ---
 
-## 3. Identity: two names, one app
+## 3. Identity: one name
 
-The folder is `Hawker`; the code is `DriverTracker` (`DriverTracker::Application`,
-`driver_tracker_*` databases, `driver_tracker` Docker image, "Driver Tracker"
-page title). Ruby module names and database names are the expensive ones to
-change. Keep new code inside `DriverTracker`. A rename is a separate, planned
-change with a database migration strategy — never a side effect of another task.
+The app, the Rails module, the databases and the image are all `Hawker`
+(`Hawker::Application`, `hawker_*` databases, `hawker` image). There is one hawker
+per deployment: no `hawkers` table, no `hawker_id` column, no tenant scoping.
+`DriverTracker` is retired and must not reappear anywhere.
 
 ---
 
@@ -60,9 +60,11 @@ Run in this order; cheapest first. Each is expected to pass with the stated outp
 | --- | --- | --- |
 | `ruby bin/ci` | every check below in one run | all steps pass, exit `0` |
 | `ruby bin/rails zeitwerk:check` | autoloading/eager-load integrity, catches misplaced or misnamed files | `All is good!` |
-| `ruby bin/rubocop` | omakase style | `23 files inspected, no offenses detected` (count grows) |
+| `ruby bin/rubocop` | omakase style | `31 files inspected, no offenses detected` (count grows) |
+| `ruby bin/rails test` | domain rules and state transitions | `13 runs, 25 assertions, 0 failures` (counts grow) |
 | `ruby bin/brakeman --no-pager` | security static analysis | `No warnings found`, exit `0` |
 | `ruby bin/bundler-audit check --update` | CVEs against `Gemfile.lock` via ruby-advisory-db | `No vulnerabilities found` |
+| `ruby bin/importmap audit` | vulnerable pinned JS packages | `No vulnerable packages found` |
 | `ruby bin/i18n-tasks missing` | keys used in code but absent from `config/locales` | `No translations are missing.` |
 | `ruby bin/rubycritic --no-browser app lib config` | churn, complexity, duplication and smell report | writes `tmp/rubycritic/overview.html` |
 | `ruby bin/rails routes` | route table still parses (run when routes change) | table prints |
@@ -159,7 +161,7 @@ with a process manager instead of bolting onto the current script.
 ## 9. Views, front end, assets
 
 - ERB only. Turbo Drive is automatic on links and forms; Turbo Frames scope partial navigation; Turbo Streams update after mutations; Stimulus adds isolated behaviour. No React/Vue/jQuery, no client-side router.
-- **JavaScript is not wired yet.** `config/importmap.rb` and `app/javascript/` do not exist, and `app/views/layouts/application.html.erb` has no `javascript_importmap_tags`. The `importmap-rails`, `turbo-rails` and `stimulus-rails` gems are therefore inert. To turn them on: `ruby bin/rails importmap:install`, add `<%= javascript_importmap_tags %>` to the layout head, then `ruby bin/rails stimulus:install`.
+- **Hotwire is wired.** `config/importmap.rb` pins Turbo, Stimulus and `app/javascript/controllers`; `app/javascript/application.js` imports them; the layout renders `javascript_importmap_tags`. Add a package with `ruby bin/importmap pin <name>`, add a Stimulus controller under `app/javascript/controllers/`, and `bin/importmap audit` runs in the gate.
 - Styles: the single stylesheet is `app/assets/stylesheets/application.css`, linked with `stylesheet_link_tag :app`. **`:app` is correct** in Rails 8.1 — verified to resolve to `application.css` with a digest. Do not "fix" it to `"application"`.
 - No CSS build step. `cssbundling-rails` is in the `Gemfile` but there is no `package.json`, so it does nothing; do not assume Tailwind/Sass is available.
 - No inline `<script>` or `<style>`. The CSP initializer is fully commented out, so nothing is protecting inline content today — enable `content_security_policy` before adding third-party scripts.
@@ -206,7 +208,7 @@ Job rules:
 - Credentials: `config/credentials.yml.enc` is committed; `config/master.key` is not. In production, inject `RAILS_MASTER_KEY`. Read with `Rails.application.credentials.dig(:section, :key)`.
 - **`.env` is inert.** `dotenv` appears in the lockfile only as a Kamal dependency, and Kamal is `require: false`. Nothing loads `.env` at boot, so `GOOGLE_MAPS_API_KEY` in it is not visible to Rails. Either export variables in the shell (`$env:GOOGLE_MAPS_API_KEY = "…"` in PowerShell) or add `dotenv-rails` deliberately and say so.
 - `ENV.fetch("X")` for required settings (fail fast), `ENV["X"]` for optional ones. No hardcoded hosts, ports, passwords or keys.
-- Production database password: `DRIVER_TRACKER_DATABASE_PASSWORD`. `DATABASE_URL` merges over `database.yml` and is the portable way to configure any environment.
+- Production database password: `HAWKER_DATABASE_PASSWORD`. `DATABASE_URL` merges over `database.yml` and is the portable way to configure any environment.
 - `config/application.rb` holds app-wide settings; `config/environments/*.rb` override them later. Keep `assume_ssl` and `force_ssl` enabled in production — they were intentionally restored and are the last defense if a proxy is misconfigured.
 - Changing `config/` requires a server restart; changing `app/` does not (reloading is on in development).
 
@@ -228,19 +230,23 @@ Job rules:
 
 ## 13. Tests
 
-None exist. `test/` and `spec/` are absent, `db/` has no migrations, and
-`rails/test_unit/railtie` is commented out in `config/application.rb`.
-`config.generators.system_tests = nil`, so generators will not create tests
-either.
+Minitest is enabled (`rails/test_unit/railtie`), `test/` exists, and the suite runs
+inside the gate. Transactional tests, no fixtures yet: each test builds what it needs.
 
-Rules:
-
-- Any new non-trivial logic ships a test: a branch, a loop, a parser, money or date math, auth, permissions, or a job's idempotency. A rename, a style tweak, a config value or a text change does not.
-- Minimal path to enable Minitest: uncomment the railtie, delete the `system_tests = nil` line, create `test/`, and run `ruby bin/rails db:test:prepare`.
-- Test the boundary, not the framework: model validations and scopes, job idempotency, controller status/redirect/authorization, and policy decisions. Never assert Rails' own behavior.
-- Fixtures over factories until a second test needs the same complex graph.
-- The test database is `driver_tracker_test` and is wiped by test runs. It needs a live PostgreSQL.
-- CI has **no** Postgres service. Adding tests means adding a `postgres:16` service container, `RAILS_ENV=test bin/rails db:test:prepare`, and the test command to `.github/workflows/ci.yml` in the same change.
+- Every domain rule gets a test. The state machine is the current subject: going
+  offline voids requested stops and drops accepted ones, a stop cannot be accepted
+  twice, a request is refused while offline.
+- `ruby bin/rails db:test:prepare` loads `db/schema.rb` into `hawker_test`. It is a
+  step in `bin/ci`, so a fresh clone needs no manual setup.
+- `test/test_helper.rb` exposes `profile`, the singleton `HawkerProfile`. Use it
+  instead of `HawkerProfile.instance` in tests.
+- Test the boundary, not the framework: model rules, state transitions, controller
+  status. Never assert Rails' own behavior.
+- Fixtures over factories until a second test needs the same graph.
+- The test database is `hawker_test`, connects over `localhost` as the `hawker` role,
+  and is wiped by test runs.
+- CI runs a `postgres:16` service container with the same `hawker` role. If a test
+  passes locally and fails in CI, compare the connection host first.
 
 ---
 
@@ -291,7 +297,6 @@ Rules:
 | No `db/migrate`, no `db/schema.rb` | `db:prepare` has nothing to build | the first migration creates both |
 | `db:prepare` fails | `fe_sendauth: no password supplied` on `localhost:5432` | set `DATABASE_URL` or `database.yml` credentials |
 | `.env` | never loaded (no `dotenv-rails`) | export in the shell |
-| `importmap`, `turbo`, `stimulus` gems | installed but inert: no `config/importmap.rb`, no `app/javascript`, no tag in the layout | run the install tasks (§9) |
 | `cssbundling-rails` | installed with no `package.json` | no Tailwind/Sass until you add a build |
 | Solid trio | gems installed, zero configuration, cable points at `redis` without the gem | §10 |
 | Active Storage / Text / Mailbox | engines required, no tables | run `:install` + migrate before using |
